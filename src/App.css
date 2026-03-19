@@ -1,0 +1,36 @@
+.app {
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #1f2937;
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  background: #ffffff;
+  padding: 2rem;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.header p {
+  margin-top: 0.75rem;
+  color: #6b7280;
+}
+
+.main-content {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.placeholder-card {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
