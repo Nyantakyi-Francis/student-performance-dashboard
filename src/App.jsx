@@ -12,6 +12,7 @@ function App() {
   const [students, setStudents] = useState(initialStudents)
   const [selectedClass, setSelectedClass] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
+  const [editingStudent, setEditingStudent] = useState(null)
 
   const classOptions = [...new Set(students.map((student) => student.class))]
 
@@ -26,6 +27,18 @@ function App() {
     })
   }, [students, selectedClass, selectedGender])
 
+  const handleDeleteStudent = (id) => {
+    setStudents((prev) => prev.filter((student) => student.id !== id))
+
+    if (editingStudent && editingStudent.id === id) {
+      setEditingStudent(null)
+    }
+  }
+
+  const handleEditStudent = (student) => {
+    setEditingStudent(student)
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -37,7 +50,12 @@ function App() {
       </header>
 
       <main className="main-content">
-        <DataManager students={students} setStudents={setStudents} />
+        <DataManager
+          students={students}
+          setStudents={setStudents}
+          editingStudent={editingStudent}
+          setEditingStudent={setEditingStudent}
+        />
 
         <FilterBar
           selectedClass={selectedClass}
@@ -54,7 +72,11 @@ function App() {
           <PerformancePieChart students={filteredStudents} />
         </section>
 
-        <StudentTable students={filteredStudents} />
+        <StudentTable
+          students={filteredStudents}
+          onDeleteStudent={handleDeleteStudent}
+          onEditStudent={handleEditStudent}
+        />
       </main>
     </div>
   )

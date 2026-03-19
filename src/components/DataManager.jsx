@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 
-function DataManager({ students, setStudents }) {
-  const [formData, setFormData] = useState({
+function DataManager({
+  students,
+  setStudents,
+  editingStudent,
+  setEditingStudent,
+}) {
+  const emptyForm = {
     name: '',
     gender: 'Female',
     class: 'Form 1',
@@ -11,14 +16,33 @@ function DataManager({ students, setStudents }) {
     english: '',
     science: '',
     socialStudies: '',
-  })
+  }
+
+  const [formData, setFormData] = useState(emptyForm)
+  const [uploadMode, setUploadMode] = useState('replace')
+
+  useEffect(() => {
+    if (editingStudent) {
+      setFormData({
+        name: editingStudent.name,
+        gender: editingStudent.gender,
+        class: editingStudent.class,
+        mathematics: editingStudent.mathematics,
+        english: editingStudent.english,
+        science: editingStudent.science,
+        socialStudies: editingStudent.socialStudies,
+      })
+    } else {
+      setFormData(emptyForm)
+    }
+  }, [editingStudent])
 
   const normalizeStudent = (row, index = 0) => {
-    const normalized = {
+    return {
       id: Date.now() + index,
-      name: row.name || row.Name || '',
-      gender: row.gender || row.Gender || '',
-      class: row.class || row.Class || '',
+      name: String(row.name || row.Name || '').trim(),
+      gender: String(row.gender || row.Gender || '').trim(),
+      class: String(row.class || row.Class || '').trim(),
       mathematics: Number(row.mathematics || row.Mathematics || 0),
       english: Number(row.english || row.English || 0),
       science: Number(row.science || row.Science || 0),
@@ -30,8 +54,6 @@ function DataManager({ students, setStudents }) {
           0
       ),
     }
-
-    return normalized
   }
 
   const isValidStudent = (student) => {
@@ -46,6 +68,19 @@ function DataManager({ students, setStudents }) {
     )
   }
 
+  const applyUploadData = (parsedStudents) => {
+    if (parsedStudents.length === 0) {
+      alert('No valid student records were found.')
+      return
+    }
+
+    if (uploadMode === 'append') {
+      setStudents((prev) => [...prev, ...parsedStudents])
+    } else {
+      setStudents(parsedStudents)
+    }
+  }
+
   const handleCsvUpload = (event) => {
     const file = event.target.files[0]
     if (!file) return
@@ -58,11 +93,7 @@ function DataManager({ students, setStudents }) {
           .map((row, index) => normalizeStudent(row, index))
           .filter(isValidStudent)
 
-        if (parsedStudents.length > 0) {
-          setStudents(parsedStudents)
-        } else {
-          alert('No valid CSV data found. Please check your column names.')
-        }
+        applyUploadData(parsedStudents)
       },
       error: () => {
         alert('Failed to parse CSV file.')
@@ -87,11 +118,7 @@ function DataManager({ students, setStudents }) {
         .map((row, index) => normalizeStudent(row, index))
         .filter(isValidStudent)
 
-      if (parsedStudents.length > 0) {
-        setStudents(parsedStudents)
-      } else {
-        alert('No valid Excel data found. Please check your column names.')
-      }
+      applyUploadData(parsedStudents)
     } catch (error) {
       alert('Failed to parse Excel file.')
     }
@@ -110,8 +137,8 @@ function DataManager({ students, setStudents }) {
   const handleManualSubmit = (event) => {
     event.preventDefault()
 
-    const newStudent = {
-      id: Date.now(),
+    const studentRecord = {
+      id: editingStudent ? editingStudent.id : Date.now(),
       name: formData.name.trim(),
       gender: formData.gender,
       class: formData.class,
@@ -121,42 +148,98 @@ function DataManager({ students, setStudents }) {
       socialStudies: Number(formData.socialStudies),
     }
 
-    if (
-      !newStudent.name ||
-      Number.isNaN(newStudent.mathematics) ||
-      Number.isNaN(newStudent.english) ||
-      Number.isNaN(newStudent.science) ||
-      Number.isNaN(newStudent.socialStudies)
-    ) {
-      alert('Please complete all fields correctly.')
+    const scores = [
+      studentRecord.mathematics,
+      studentRecord.english,
+      studentRecord.science,
+      studentRecord.socialStudies,
+    ]
+
+    const hasInvalidScore = scores.some(
+      (score) => Number.isNaN(score) || score < 0 || score > 100
+    )
+
+    if (!studentRecord.name || hasInvalidScore) {
+      alert('Please enter a valid name and scores between 0 and 100.')
       return
     }
 
-    setStudents((prev) => [...prev, newStudent])
+    if (editingStudent) {
+      setStudents((prev) =>
+        prev.map((student) =>
+          student.id === editingStudent.id ? studentRecord : student
+        )
+      )
+      setEditingStudent(null)
+    } else {
+      setStudents((prev) => [...prev, studentRecord])
+    }
 
-    setFormData({
-      name: '',
-      gender: 'Female',
-      class: 'Form 1',
-      mathematics: '',
-      english: '',
-      science: '',
-      socialStudies: '',
-    })
+    setFormData(emptyForm)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingStudent(null)
+    setFormData(emptyForm)
   }
 
   const resetToSampleData = async () => {
     const module = await import('../data/students')
     setStudents(module.default)
+    setEditingStudent(null)
+    setFormData(emptyForm)
+  }
+
+  const exportToCsv = () => {
+    if (students.length === 0) {
+      alert('There is no data to export.')
+      return
+    }
+
+    const csv = Papa.unparse(students)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.setAttribute('download', 'student-performance-data.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const exportToExcel = () => {
+    if (students.length === 0) {
+      alert('There is no data to export.')
+      return
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(students)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
+    XLSX.writeFile(workbook, 'student-performance-data.xlsx')
   }
 
   return (
     <section className="data-manager">
       <div className="data-manager-card">
-        <h2>Import Student Data</h2>
+        <h2>Manage Student Data</h2>
         <p>
-          Upload a CSV file, an Excel file, or add a student manually.
+          Upload student records, add new students, edit existing entries, and
+          export your dataset.
         </p>
+
+        <div className="upload-mode-box">
+          <label htmlFor="uploadMode">Upload Mode</label>
+          <select
+            id="uploadMode"
+            value={uploadMode}
+            onChange={(e) => setUploadMode(e.target.value)}
+          >
+            <option value="replace">Replace current dataset</option>
+            <option value="append">Append to current dataset</option>
+          </select>
+        </div>
 
         <div className="upload-grid">
           <div className="upload-box">
@@ -181,7 +264,7 @@ function DataManager({ students, setStudents }) {
         </div>
 
         <form className="manual-form" onSubmit={handleManualSubmit}>
-          <h3>Manual Student Entry</h3>
+          <h3>{editingStudent ? 'Edit Student Record' : 'Manual Student Entry'}</h3>
 
           <div className="manual-grid">
             <input
@@ -237,7 +320,20 @@ function DataManager({ students, setStudents }) {
           </div>
 
           <div className="manual-actions">
-            <button type="submit">Add Student</button>
+            <button type="submit">
+              {editingStudent ? 'Update Student' : 'Add Student'}
+            </button>
+
+            {editingStudent && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={handleCancelEdit}
+              >
+                Cancel Edit
+              </button>
+            )}
+
             <button
               type="button"
               className="secondary-button"
@@ -247,6 +343,15 @@ function DataManager({ students, setStudents }) {
             </button>
           </div>
         </form>
+
+        <div className="export-actions">
+          <button type="button" onClick={exportToCsv}>
+            Export CSV
+          </button>
+          <button type="button" onClick={exportToExcel}>
+            Export Excel
+          </button>
+        </div>
 
         <div className="data-summary">
           <strong>Current dataset size:</strong> {students.length} students

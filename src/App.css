@@ -225,3 +225,66 @@ th {
   color: #374151;
   font-size: 0.95rem;
 }
+.upload-mode-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  max-width: 300px;
+}
+
+.upload-mode-box label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.upload-mode-box select {
+  padding: 0.8rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 1rem;
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.export-actions button {
+  padding: 0.85rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #111827;
+  color: #ffffff;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.edit-button,
+.delete-button {
+  border: none;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.edit-button {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.delete-button {
+  background: #fee2e2;
+  color: #b91c1c;
+}

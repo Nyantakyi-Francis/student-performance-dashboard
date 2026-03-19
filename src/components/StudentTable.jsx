@@ -1,4 +1,4 @@
-function StudentTable({ students }) {
+function StudentTable({ students, onDeleteStudent, onEditStudent }) {
   return (
     <section className="table-card">
       <h2>Student Performance Table</h2>
@@ -18,6 +18,7 @@ function StudentTable({ students }) {
                 <th>Science</th>
                 <th>Social Studies</th>
                 <th>Average</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -40,6 +41,24 @@ function StudentTable({ students }) {
                     <td>{student.science}</td>
                     <td>{student.socialStudies}</td>
                     <td>{average.toFixed(1)}%</td>
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="edit-button"
+                          onClick={() => onEditStudent(student)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="delete-button"
+                          onClick={() => onDeleteStudent(student.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
