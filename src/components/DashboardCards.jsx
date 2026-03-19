@@ -1,4 +1,27 @@
 function DashboardCards({ students }) {
+  if (students.length === 0) {
+    return (
+      <section className="cards-grid">
+        <div className="dashboard-card">
+          <h3>Total Students</h3>
+          <p>0</p>
+        </div>
+        <div className="dashboard-card">
+          <h3>Class Average</h3>
+          <p>0.0%</p>
+        </div>
+        <div className="dashboard-card">
+          <h3>Best Subject</h3>
+          <p>N/A</p>
+        </div>
+        <div className="dashboard-card">
+          <h3>Weakest Subject</h3>
+          <p>N/A</p>
+        </div>
+      </section>
+    )
+  }
+
   const totalStudents = students.length
 
   const subjectTotals = {

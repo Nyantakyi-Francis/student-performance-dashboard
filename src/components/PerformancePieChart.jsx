@@ -10,6 +10,14 @@ import { Pie } from 'react-chartjs-2'
 ChartJS.register(ArcElement, Tooltip, Legend, Title)
 
 function PerformancePieChart({ students }) {
+  if (students.length === 0) {
+    return (
+      <div className="chart-card">
+        <h2>No data available for this filter</h2>
+      </div>
+    )
+  }
+
   const averages = students.map((student) => {
     const total =
       student.mathematics +

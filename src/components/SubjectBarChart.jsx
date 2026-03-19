@@ -19,6 +19,14 @@ ChartJS.register(
 )
 
 function SubjectBarChart({ students }) {
+  if (students.length === 0) {
+    return (
+      <div className="chart-card">
+        <h2>No data available for this filter</h2>
+      </div>
+    )
+  }
+
   const totalStudents = students.length
 
   const mathAvg =
