@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import './App.css'
-import students from './data/students'
+import initialStudents from './data/students'
 import DashboardCards from './components/DashboardCards'
 import SubjectBarChart from './components/SubjectBarChart'
 import PerformancePieChart from './components/PerformancePieChart'
 import StudentTable from './components/StudentTable'
 import FilterBar from './components/FilterBar'
+import DataManager from './components/DataManager'
 
 function App() {
+  const [students, setStudents] = useState(initialStudents)
   const [selectedClass, setSelectedClass] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
 
@@ -22,7 +24,7 @@ function App() {
 
       return matchesClass && matchesGender
     })
-  }, [selectedClass, selectedGender])
+  }, [students, selectedClass, selectedGender])
 
   return (
     <div className="app">
@@ -35,6 +37,8 @@ function App() {
       </header>
 
       <main className="main-content">
+        <DataManager students={students} setStudents={setStudents} />
+
         <FilterBar
           selectedClass={selectedClass}
           setSelectedClass={setSelectedClass}
