@@ -1,70 +1,103 @@
 import { useEffect, useState } from 'react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
+import { formatSubjectLabel } from '../data/config'
 
 function DataManager({
   students,
   setStudents,
   editingStudent,
   setEditingStudent,
+  subjects,
+  setSubjects,
+  grades,
+  setGrades,
 }) {
+  const buildEmptyScores = () =>
+    subjects.reduce((acc, subject) => {
+      acc[subject] = ''
+      return acc
+    }, {})
+
   const emptyForm = {
     name: '',
     gender: 'Female',
-    class: 'Form 1',
-    mathematics: '',
-    english: '',
-    science: '',
-    socialStudies: '',
+    grade: 'Grade 7',
+    scores: buildEmptyScores(),
   }
 
   const [formData, setFormData] = useState(emptyForm)
   const [uploadMode, setUploadMode] = useState('replace')
+  const [newSubject, setNewSubject] = useState('')
+  const [newGrade, setNewGrade] = useState('')
 
   useEffect(() => {
     if (editingStudent) {
+      const mergedScores = subjects.reduce((acc, subject) => {
+        acc[subject] = editingStudent.scores[subject] ?? ''
+        return acc
+      }, {})
+
       setFormData({
         name: editingStudent.name,
         gender: editingStudent.gender,
-        class: editingStudent.class,
-        mathematics: editingStudent.mathematics,
-        english: editingStudent.english,
-        science: editingStudent.science,
-        socialStudies: editingStudent.socialStudies,
+        grade: editingStudent.grade,
+        scores: mergedScores,
       })
     } else {
-      setFormData(emptyForm)
+      setFormData({
+        name: '',
+        gender: 'Female',
+        grade: grades[0] || 'Grade 7',
+        scores: buildEmptyScores(),
+      })
     }
-  }, [editingStudent])
+  }, [editingStudent, subjects, grades])
+
+  const normalizeKey = (value) => {
+    const clean = value.trim()
+    if (!clean) return ''
+    return clean
+      .replace(/\s+/g, ' ')
+      .replace(/[^a-zA-Z0-9 ]/g, '')
+      .split(' ')
+      .map((word, index) =>
+        index === 0
+          ? word.toLowerCase()
+          : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      )
+      .join('')
+  }
 
   const normalizeStudent = (row, index = 0) => {
+    const scoreObject = {}
+
+    subjects.forEach((subject) => {
+      scoreObject[subject] = Number(
+        row[subject] ??
+          row[formatSubjectLabel(subject)] ??
+          row[subject.toLowerCase()] ??
+          0
+      )
+    })
+
     return {
       id: Date.now() + index,
       name: String(row.name || row.Name || '').trim(),
       gender: String(row.gender || row.Gender || '').trim(),
-      class: String(row.class || row.Class || '').trim(),
-      mathematics: Number(row.mathematics || row.Mathematics || 0),
-      english: Number(row.english || row.English || 0),
-      science: Number(row.science || row.Science || 0),
-      socialStudies: Number(
-        row.socialStudies ||
-          row['Social Studies'] ||
-          row.social_studies ||
-          row.SocialStudies ||
-          0
-      ),
+      grade: String(row.grade || row.Grade || '').trim(),
+      scores: scoreObject,
     }
   }
 
   const isValidStudent = (student) => {
+    const scoreValues = Object.values(student.scores)
+
     return (
       student.name &&
       student.gender &&
-      student.class &&
-      !Number.isNaN(student.mathematics) &&
-      !Number.isNaN(student.english) &&
-      !Number.isNaN(student.science) &&
-      !Number.isNaN(student.socialStudies)
+      student.grade &&
+      scoreValues.every((score) => !Number.isNaN(score))
     )
   }
 
@@ -73,6 +106,9 @@ function DataManager({
       alert('No valid student records were found.')
       return
     }
+
+    const uploadedGrades = parsedStudents.map((student) => student.grade)
+    setGrades((prev) => [...new Set([...prev, ...uploadedGrades])])
 
     if (uploadMode === 'append') {
       setStudents((prev) => [...prev, ...parsedStudents])
@@ -126,7 +162,7 @@ function DataManager({
     event.target.value = ''
   }
 
-  const handleChange = (event) => {
+  const handleBasicChange = (event) => {
     const { name, value } = event.target
     setFormData((prev) => ({
       ...prev,
@@ -134,33 +170,40 @@ function DataManager({
     }))
   }
 
+  const handleScoreChange = (subject, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      scores: {
+        ...prev.scores,
+        [subject]: value,
+      },
+    }))
+  }
+
   const handleManualSubmit = (event) => {
     event.preventDefault()
+
+    const scoreObject = {}
+    subjects.forEach((subject) => {
+      scoreObject[subject] = Number(formData.scores[subject])
+    })
+
+    const scoreValues = Object.values(scoreObject)
+
+    const hasInvalidScore = scoreValues.some(
+      (score) => Number.isNaN(score) || score < 0 || score > 100
+    )
 
     const studentRecord = {
       id: editingStudent ? editingStudent.id : Date.now(),
       name: formData.name.trim(),
       gender: formData.gender,
-      class: formData.class,
-      mathematics: Number(formData.mathematics),
-      english: Number(formData.english),
-      science: Number(formData.science),
-      socialStudies: Number(formData.socialStudies),
+      grade: formData.grade,
+      scores: scoreObject,
     }
 
-    const scores = [
-      studentRecord.mathematics,
-      studentRecord.english,
-      studentRecord.science,
-      studentRecord.socialStudies,
-    ]
-
-    const hasInvalidScore = scores.some(
-      (score) => Number.isNaN(score) || score < 0 || score > 100
-    )
-
-    if (!studentRecord.name || hasInvalidScore) {
-      alert('Please enter a valid name and scores between 0 and 100.')
+    if (!studentRecord.name || !studentRecord.grade || hasInvalidScore) {
+      alert('Please enter a valid name, grade, and scores between 0 and 100.')
       return
     }
 
@@ -175,19 +218,56 @@ function DataManager({
       setStudents((prev) => [...prev, studentRecord])
     }
 
-    setFormData(emptyForm)
+    setGrades((prev) => [...new Set([...prev, studentRecord.grade])])
+
+    setFormData({
+      name: '',
+      gender: 'Female',
+      grade: grades[0] || 'Grade 7',
+      scores: buildEmptyScores(),
+    })
   }
 
   const handleCancelEdit = () => {
     setEditingStudent(null)
-    setFormData(emptyForm)
+  }
+
+  const handleAddSubject = () => {
+    const subjectKey = normalizeKey(newSubject)
+    if (!subjectKey) return
+    if (subjects.includes(subjectKey)) return
+
+    setSubjects((prev) => [...prev, subjectKey])
+
+    setStudents((prev) =>
+      prev.map((student) => ({
+        ...student,
+        scores: {
+          ...student.scores,
+          [subjectKey]: 0,
+        },
+      }))
+    )
+
+    setNewSubject('')
+  }
+
+  const handleAddGrade = () => {
+    const gradeValue = newGrade.trim()
+    if (!gradeValue) return
+    if (grades.includes(gradeValue)) return
+
+    setGrades((prev) => [...prev, gradeValue])
+    setNewGrade('')
   }
 
   const resetToSampleData = async () => {
-    const module = await import('../data/students')
-    setStudents(module.default)
+    const studentsModule = await import('../data/students')
+    const configModule = await import('../data/config')
+    setStudents(studentsModule.default)
+    setSubjects(configModule.defaultSubjects)
+    setGrades(configModule.defaultGrades)
     setEditingStudent(null)
-    setFormData(emptyForm)
   }
 
   const exportToCsv = () => {
@@ -196,7 +276,21 @@ function DataManager({
       return
     }
 
-    const csv = Papa.unparse(students)
+    const exportData = students.map((student) => {
+      const row = {
+        name: student.name,
+        gender: student.gender,
+        grade: student.grade,
+      }
+
+      subjects.forEach((subject) => {
+        row[formatSubjectLabel(subject)] = student.scores[subject] ?? 0
+      })
+
+      return row
+    })
+
+    const csv = Papa.unparse(exportData)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -214,7 +308,21 @@ function DataManager({
       return
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(students)
+    const exportData = students.map((student) => {
+      const row = {
+        name: student.name,
+        gender: student.gender,
+        grade: student.grade,
+      }
+
+      subjects.forEach((subject) => {
+        row[formatSubjectLabel(subject)] = student.scores[subject] ?? 0
+      })
+
+      return row
+    })
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
     XLSX.writeFile(workbook, 'student-performance-data.xlsx')
@@ -225,8 +333,8 @@ function DataManager({
       <div className="data-manager-card">
         <h2>Manage Student Data</h2>
         <p>
-          Upload student records, add new students, edit existing entries, and
-          export your dataset.
+          Upload student records, add new students, edit entries, and expand the
+          system with more subjects and grades.
         </p>
 
         <div className="upload-mode-box">
@@ -263,6 +371,34 @@ function DataManager({
           </div>
         </div>
 
+        <div className="manual-form" style={{ marginBottom: '1rem' }}>
+          <h3>Add More Subjects and Grades</h3>
+
+          <div className="manual-actions">
+            <input
+              type="text"
+              placeholder="Add subject e.g. ICT"
+              value={newSubject}
+              onChange={(e) => setNewSubject(e.target.value)}
+            />
+            <button type="button" onClick={handleAddSubject}>
+              Add Subject
+            </button>
+          </div>
+
+          <div className="manual-actions">
+            <input
+              type="text"
+              placeholder="Add grade e.g. Grade 10"
+              value={newGrade}
+              onChange={(e) => setNewGrade(e.target.value)}
+            />
+            <button type="button" onClick={handleAddGrade}>
+              Add Grade
+            </button>
+          </div>
+        </div>
+
         <form className="manual-form" onSubmit={handleManualSubmit}>
           <h3>{editingStudent ? 'Edit Student Record' : 'Manual Student Entry'}</h3>
 
@@ -272,51 +408,39 @@ function DataManager({
               name="name"
               placeholder="Student name"
               value={formData.name}
-              onChange={handleChange}
+              onChange={handleBasicChange}
             />
 
-            <select name="gender" value={formData.gender} onChange={handleChange}>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleBasicChange}
+            >
               <option value="Female">Female</option>
               <option value="Male">Male</option>
             </select>
 
-            <select name="class" value={formData.class} onChange={handleChange}>
-              <option value="Form 1">Form 1</option>
-              <option value="Form 2">Form 2</option>
-              <option value="Form 3">Form 3</option>
+            <select
+              name="grade"
+              value={formData.grade}
+              onChange={handleBasicChange}
+            >
+              {grades.map((grade) => (
+                <option key={grade} value={grade}>
+                  {grade}
+                </option>
+              ))}
             </select>
 
-            <input
-              type="number"
-              name="mathematics"
-              placeholder="Mathematics"
-              value={formData.mathematics}
-              onChange={handleChange}
-            />
-
-            <input
-              type="number"
-              name="english"
-              placeholder="English"
-              value={formData.english}
-              onChange={handleChange}
-            />
-
-            <input
-              type="number"
-              name="science"
-              placeholder="Science"
-              value={formData.science}
-              onChange={handleChange}
-            />
-
-            <input
-              type="number"
-              name="socialStudies"
-              placeholder="Social Studies"
-              value={formData.socialStudies}
-              onChange={handleChange}
-            />
+            {subjects.map((subject) => (
+              <input
+                key={subject}
+                type="number"
+                placeholder={formatSubjectLabel(subject)}
+                value={formData.scores[subject] ?? ''}
+                onChange={(e) => handleScoreChange(subject, e.target.value)}
+              />
+            ))}
           </div>
 
           <div className="manual-actions">

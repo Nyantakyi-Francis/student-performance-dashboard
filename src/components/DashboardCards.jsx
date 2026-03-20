@@ -1,4 +1,6 @@
-function DashboardCards({ students }) {
+import { formatSubjectLabel } from '../data/config'
+
+function DashboardCards({ students, subjects }) {
   if (students.length === 0) {
     return (
       <section className="cards-grid">
@@ -24,33 +26,19 @@ function DashboardCards({ students }) {
 
   const totalStudents = students.length
 
-  const subjectTotals = {
-    mathematics: 0,
-    english: 0,
-    science: 0,
-    socialStudies: 0,
-  }
+  const subjectAverages = {}
 
-  students.forEach((student) => {
-    subjectTotals.mathematics += student.mathematics
-    subjectTotals.english += student.english
-    subjectTotals.science += student.science
-    subjectTotals.socialStudies += student.socialStudies
+  subjects.forEach((subject) => {
+    const total = students.reduce(
+      (sum, student) => sum + (student.scores[subject] ?? 0),
+      0
+    )
+    subjectAverages[subject] = total / totalStudents
   })
 
-  const subjectAverages = {
-    Mathematics: subjectTotals.mathematics / totalStudents,
-    English: subjectTotals.english / totalStudents,
-    Science: subjectTotals.science / totalStudents,
-    'Social Studies': subjectTotals.socialStudies / totalStudents,
-  }
-
   const classAverage =
-    (subjectAverages.Mathematics +
-      subjectAverages.English +
-      subjectAverages.Science +
-      subjectAverages['Social Studies']) /
-    4
+    Object.values(subjectAverages).reduce((sum, value) => sum + value, 0) /
+    subjects.length
 
   const bestSubject = Object.entries(subjectAverages).reduce((a, b) =>
     a[1] > b[1] ? a : b
@@ -63,8 +51,8 @@ function DashboardCards({ students }) {
   const cards = [
     { title: 'Total Students', value: totalStudents },
     { title: 'Class Average', value: `${classAverage.toFixed(1)}%` },
-    { title: 'Best Subject', value: bestSubject },
-    { title: 'Weakest Subject', value: weakestSubject },
+    { title: 'Best Subject', value: formatSubjectLabel(bestSubject) },
+    { title: 'Weakest Subject', value: formatSubjectLabel(weakestSubject) },
   ]
 
   return (

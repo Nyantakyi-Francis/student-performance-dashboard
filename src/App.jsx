@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 import initialStudents from './data/students'
+import { defaultSubjects, defaultGrades } from './data/config'
 import DashboardCards from './components/DashboardCards'
 import SubjectBarChart from './components/SubjectBarChart'
 import PerformancePieChart from './components/PerformancePieChart'
@@ -10,22 +11,24 @@ import DataManager from './components/DataManager'
 
 function App() {
   const [students, setStudents] = useState(initialStudents)
-  const [selectedClass, setSelectedClass] = useState('All')
+  const [subjects, setSubjects] = useState(defaultSubjects)
+  const [grades, setGrades] = useState(defaultGrades)
+  const [selectedGrade, setSelectedGrade] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
   const [editingStudent, setEditingStudent] = useState(null)
 
-  const classOptions = [...new Set(students.map((student) => student.class))]
+  const availableGrades = [...new Set([...grades, ...students.map((student) => student.grade)])]
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
-      const matchesClass =
-        selectedClass === 'All' || student.class === selectedClass
+      const matchesGrade =
+        selectedGrade === 'All' || student.grade === selectedGrade
       const matchesGender =
         selectedGender === 'All' || student.gender === selectedGender
 
-      return matchesClass && matchesGender
+      return matchesGrade && matchesGender
     })
-  }, [students, selectedClass, selectedGender])
+  }, [students, selectedGrade, selectedGender])
 
   const handleDeleteStudent = (id) => {
     setStudents((prev) => prev.filter((student) => student.id !== id))
@@ -41,13 +44,13 @@ function App() {
 
   return (
     <div className="app">
-<header className="header">
-  <h1>Student Performance Analytics Dashboard</h1>
-  <p>
-    A modern academic insights platform for tracking results, identifying weak
-    subjects, and managing student performance records with ease.
-  </p>
-</header>
+      <header className="header">
+        <h1>Student Performance Analytics Dashboard</h1>
+        <p>
+          Track student results, class averages, and subject performance in one
+          place.
+        </p>
+      </header>
 
       <main className="main-content">
         <DataManager
@@ -55,25 +58,30 @@ function App() {
           setStudents={setStudents}
           editingStudent={editingStudent}
           setEditingStudent={setEditingStudent}
+          subjects={subjects}
+          setSubjects={setSubjects}
+          grades={grades}
+          setGrades={setGrades}
         />
 
         <FilterBar
-          selectedClass={selectedClass}
-          setSelectedClass={setSelectedClass}
+          selectedGrade={selectedGrade}
+          setSelectedGrade={setSelectedGrade}
           selectedGender={selectedGender}
           setSelectedGender={setSelectedGender}
-          classOptions={classOptions}
+          gradeOptions={availableGrades}
         />
 
-        <DashboardCards students={filteredStudents} />
+        <DashboardCards students={filteredStudents} subjects={subjects} />
 
         <section className="charts-grid">
-          <SubjectBarChart students={filteredStudents} />
-          <PerformancePieChart students={filteredStudents} />
+          <SubjectBarChart students={filteredStudents} subjects={subjects} />
+          <PerformancePieChart students={filteredStudents} subjects={subjects} />
         </section>
 
         <StudentTable
           students={filteredStudents}
+          subjects={subjects}
           onDeleteStudent={handleDeleteStudent}
           onEditStudent={handleEditStudent}
         />

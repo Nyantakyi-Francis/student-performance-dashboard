@@ -8,6 +8,7 @@ import {
   Legend,
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
+import { formatSubjectLabel } from '../data/config'
 
 ChartJS.register(
   CategoryScale,
@@ -18,7 +19,7 @@ ChartJS.register(
   Legend
 )
 
-function SubjectBarChart({ students }) {
+function SubjectBarChart({ students, subjects }) {
   if (students.length === 0) {
     return (
       <div className="chart-card">
@@ -29,25 +30,26 @@ function SubjectBarChart({ students }) {
 
   const totalStudents = students.length
 
-  const mathAvg =
-    students.reduce((sum, student) => sum + student.mathematics, 0) / totalStudents
-  const engAvg =
-    students.reduce((sum, student) => sum + student.english, 0) / totalStudents
-  const sciAvg =
-    students.reduce((sum, student) => sum + student.science, 0) / totalStudents
-  const socAvg =
-    students.reduce((sum, student) => sum + student.socialStudies, 0) / totalStudents
+  const averages = subjects.map((subject) => {
+    const total = students.reduce(
+      (sum, student) => sum + (student.scores[subject] ?? 0),
+      0
+    )
+    return total / totalStudents
+  })
 
   const data = {
-    labels: ['Mathematics', 'English', 'Science', 'Social Studies'],
-    datasets: [
-      {
-        label: 'Average Score',
-        data: [mathAvg, engAvg, sciAvg, socAvg],
-        borderWidth: 1,
-        borderRadius: 8,
-      },
-    ],
+    labels: subjects.map(formatSubjectLabel),
+datasets: [
+  {
+    label: 'Average Score',
+    data: averages,
+    backgroundColor: ['#60a5fa', '#34d399', '#a78bfa', '#f59e0b', '#f472b6', '#22c55e'],
+    borderColor: ['#2563eb', '#059669', '#7c3aed', '#d97706', '#db2777', '#16a34a'],
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+],
   }
 
   const options = {

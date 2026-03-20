@@ -9,7 +9,7 @@ import { Pie } from 'react-chartjs-2'
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title)
 
-function PerformancePieChart({ students }) {
+function PerformancePieChart({ students, subjects }) {
   if (students.length === 0) {
     return (
       <div className="chart-card">
@@ -19,12 +19,11 @@ function PerformancePieChart({ students }) {
   }
 
   const averages = students.map((student) => {
-    const total =
-      student.mathematics +
-      student.english +
-      student.science +
-      student.socialStudies
-    return total / 4
+    const total = subjects.reduce(
+      (sum, subject) => sum + (student.scores[subject] ?? 0),
+      0
+    )
+    return total / subjects.length
   })
 
   const passCount = averages.filter((avg) => avg >= 50).length
@@ -32,13 +31,15 @@ function PerformancePieChart({ students }) {
 
   const data = {
     labels: ['Pass', 'Fail'],
-    datasets: [
-      {
-        label: 'Student Outcome',
-        data: [passCount, failCount],
-        borderWidth: 1,
-      },
-    ],
+datasets: [
+  {
+    label: 'Student Outcome',
+    data: [passCount, failCount],
+    backgroundColor: ['#34d399', '#f87171'],
+    borderColor: ['#059669', '#dc2626'],
+    borderWidth: 1,
+  },
+],
   }
 
   const options = {

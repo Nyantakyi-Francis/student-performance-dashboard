@@ -1,23 +1,23 @@
 function FilterBar({
-  selectedClass,
-  setSelectedClass,
+  selectedGrade,
+  setSelectedGrade,
   selectedGender,
   setSelectedGender,
-  classOptions,
+  gradeOptions,
 }) {
   return (
     <section className="filter-bar">
       <div className="filter-group">
-        <label htmlFor="classFilter">Filter by Class</label>
+        <label htmlFor="gradeFilter">Filter by Grade</label>
         <select
-          id="classFilter"
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
+          id="gradeFilter"
+          value={selectedGrade}
+          onChange={(e) => setSelectedGrade(e.target.value)}
         >
-          <option value="All">All Classes</option>
-          {classOptions.map((className) => (
-            <option key={className} value={className}>
-              {className}
+          <option value="All">All Grades</option>
+          {gradeOptions.map((grade) => (
+            <option key={grade} value={grade}>
+              {grade}
             </option>
           ))}
         </select>
