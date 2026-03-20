@@ -86,6 +86,18 @@ function App() {
           onEditStudent={handleEditStudent}
         />
       </main>
+      <footer className="footer">
+  <p>
+    Built by{' '}
+    <a
+      href="https://nyantakyi-francis.github.io/portfolio/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Nyantakyi Francis
+    </a>
+  </p>
+</footer>
     </div>
   )
 }
