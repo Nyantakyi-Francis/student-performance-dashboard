@@ -1,7 +1,9 @@
 function StudentTable({ students, onDeleteStudent, onEditStudent }) {
   return (
     <section className="table-card">
-      <h2>Student Performance Table</h2>
+     <div className="section-heading">
+  <h2>Student Performance Table</h2>
+</div>
 
       {students.length === 0 ? (
         <p>No students match the selected filters.</p>

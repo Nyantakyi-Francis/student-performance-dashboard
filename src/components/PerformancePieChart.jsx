@@ -43,6 +43,7 @@ function PerformancePieChart({ students }) {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
@@ -56,7 +57,9 @@ function PerformancePieChart({ students }) {
 
   return (
     <div className="chart-card">
-      <Pie data={data} options={options} />
+      <div className="pie-chart-inner">
+        <Pie data={data} options={options} />
+      </div>
     </div>
   )
 }

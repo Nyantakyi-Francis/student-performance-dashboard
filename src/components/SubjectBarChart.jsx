@@ -45,12 +45,14 @@ function SubjectBarChart({ students }) {
         label: 'Average Score',
         data: [mathAvg, engAvg, sciAvg, socAvg],
         borderWidth: 1,
+        borderRadius: 8,
       },
     ],
   }
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
@@ -70,7 +72,9 @@ function SubjectBarChart({ students }) {
 
   return (
     <div className="chart-card">
-      <Bar data={data} options={options} />
+      <div className="chart-inner">
+        <Bar data={data} options={options} />
+      </div>
     </div>
   )
 }

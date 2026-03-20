@@ -41,13 +41,13 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <h1>Student Performance Analytics Dashboard</h1>
-        <p>
-          Track student results, class averages, and subject performance in one
-          place.
-        </p>
-      </header>
+<header className="header">
+  <h1>Student Performance Analytics Dashboard</h1>
+  <p>
+    A modern academic insights platform for tracking results, identifying weak
+    subjects, and managing student performance records with ease.
+  </p>
+</header>
 
       <main className="main-content">
         <DataManager

@@ -4,6 +4,15 @@
   padding: 0;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
-  background: #f5f7fb;
+  min-height: 100vh;
+  background: #f8fafc;
+  font-family: Arial, sans-serif;
 }
