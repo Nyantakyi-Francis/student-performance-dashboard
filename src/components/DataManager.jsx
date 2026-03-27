@@ -12,6 +12,8 @@ function DataManager({
   setSubjects,
   grades,
   setGrades,
+  terms,
+  setTerms,
 }) {
   const normalizeKey = (value) => {
     const clean = String(value || '').trim()
@@ -35,17 +37,18 @@ function DataManager({
       return acc
     }, {})
 
-  const emptyForm = {
+  const [formData, setFormData] = useState({
     name: '',
     gender: 'Female',
-    grade: 'Grade 7',
+    grade: grades[0] || 'Grade 7',
+    term: terms[0] || 'Term 1',
     scores: buildEmptyScores(),
-  }
+  })
 
-  const [formData, setFormData] = useState(emptyForm)
   const [uploadMode, setUploadMode] = useState('replace')
   const [newSubject, setNewSubject] = useState('')
   const [newGrade, setNewGrade] = useState('')
+  const [newTerm, setNewTerm] = useState('')
 
   useEffect(() => {
     if (editingStudent) {
@@ -58,6 +61,7 @@ function DataManager({
         name: editingStudent.name,
         gender: editingStudent.gender,
         grade: editingStudent.grade,
+        term: editingStudent.term || (terms[0] || 'Term 1'),
         scores: mergedScores,
       })
     } else {
@@ -65,12 +69,13 @@ function DataManager({
         name: '',
         gender: 'Female',
         grade: grades[0] || 'Grade 7',
+        term: terms[0] || 'Term 1',
         scores: buildEmptyScores(),
       })
     }
-  }, [editingStudent, subjects, grades])
+  }, [editingStudent, subjects, grades, terms])
 
-  const reservedFields = ['id', 'name', 'gender', 'grade']
+  const reservedFields = ['id', 'name', 'gender', 'grade', 'term']
 
   const detectSubjectsFromRows = (rows) => {
     const detectedSubjects = new Set(subjects)
@@ -99,20 +104,16 @@ function DataManager({
 
     allSubjects.forEach((subject) => {
       const rawValue = getRowValueByNormalizedKey(row, subject)
-      scoreObject[subject] = Number(rawValue ?? 0)
+      const numericValue = Number(rawValue ?? 0)
+      scoreObject[subject] = Number.isNaN(numericValue) ? 0 : numericValue
     })
 
     return {
       id: Date.now() + index,
-      name: String(
-        getRowValueByNormalizedKey(row, 'name') ?? ''
-      ).trim(),
-      gender: String(
-        getRowValueByNormalizedKey(row, 'gender') ?? ''
-      ).trim(),
-      grade: String(
-        getRowValueByNormalizedKey(row, 'grade') ?? ''
-      ).trim(),
+      name: String(getRowValueByNormalizedKey(row, 'name') ?? '').trim(),
+      gender: String(getRowValueByNormalizedKey(row, 'gender') ?? '').trim(),
+      grade: String(getRowValueByNormalizedKey(row, 'grade') ?? '').trim(),
+      term: String(getRowValueByNormalizedKey(row, 'term') ?? '').trim() || (terms[0] || 'Term 1'),
       scores: scoreObject,
     }
   }
@@ -124,6 +125,7 @@ function DataManager({
       student.name &&
       student.gender &&
       student.grade &&
+      student.term &&
       scoreValues.every((score) => !Number.isNaN(score))
     )
   }
@@ -138,6 +140,9 @@ function DataManager({
 
     const uploadedGrades = parsedStudents.map((student) => student.grade)
     setGrades((prev) => [...new Set([...prev, ...uploadedGrades])])
+
+    const uploadedTerms = parsedStudents.map((student) => student.term)
+    setTerms((prev) => [...new Set([...prev, ...uploadedTerms])])
 
     if (uploadMode === 'append') {
       setStudents((prev) => [...prev, ...parsedStudents])
@@ -231,11 +236,17 @@ function DataManager({
       name: formData.name.trim(),
       gender: formData.gender,
       grade: formData.grade,
+      term: formData.term,
       scores: scoreObject,
     }
 
-    if (!studentRecord.name || !studentRecord.grade || hasInvalidScore) {
-      alert('Please enter a valid name, grade, and scores between 0 and 100.')
+    if (
+      !studentRecord.name ||
+      !studentRecord.grade ||
+      !studentRecord.term ||
+      hasInvalidScore
+    ) {
+      alert('Please enter a valid name, grade, term, and scores between 0 and 100.')
       return
     }
 
@@ -251,11 +262,13 @@ function DataManager({
     }
 
     setGrades((prev) => [...new Set([...prev, studentRecord.grade])])
+    setTerms((prev) => [...new Set([...prev, studentRecord.term])])
 
     setFormData({
       name: '',
       gender: 'Female',
       grade: grades[0] || 'Grade 7',
+      term: terms[0] || 'Term 1',
       scores: buildEmptyScores(),
     })
   }
@@ -293,13 +306,28 @@ function DataManager({
     setNewGrade('')
   }
 
+  const handleAddTerm = () => {
+    const termValue = newTerm.trim()
+    if (!termValue) return
+    if (terms.includes(termValue)) return
+
+    setTerms((prev) => [...prev, termValue])
+    setNewTerm('')
+  }
+
   const resetToSampleData = async () => {
     const studentsModule = await import('../data/students')
     const configModule = await import('../data/config')
 
-    setStudents(studentsModule.default)
+    const resetStudents = studentsModule.default.map((student) => ({
+      ...student,
+      term: student.term || 'Term 1',
+    }))
+
+    setStudents(resetStudents)
     setSubjects(configModule.defaultSubjects)
     setGrades(configModule.defaultGrades)
+    setTerms(configModule.defaultTerms)
     setEditingStudent(null)
   }
 
@@ -314,6 +342,7 @@ function DataManager({
         name: student.name,
         gender: student.gender,
         grade: student.grade,
+        term: student.term || 'Term 1',
       }
 
       subjects.forEach((subject) => {
@@ -345,6 +374,7 @@ function DataManager({
         name: student.name,
         gender: student.gender,
         grade: student.grade,
+        term: student.term || 'Term 1',
       }
 
       subjects.forEach((subject) => {
@@ -366,7 +396,7 @@ function DataManager({
         <h2>Manage Student Data</h2>
         <p>
           Upload student records, add new students, edit entries, and expand the system
-          with more subjects and grades.
+          with more subjects, grades, and terms.
         </p>
       </div>
 
@@ -402,7 +432,7 @@ function DataManager({
 
       <div className="manager-grid">
         <div className="manager-side">
-          <h3>Add More Subjects and Grades</h3>
+          <h3>Add More Subjects, Grades and Terms</h3>
 
           <div className="inline-form">
             <input
@@ -425,6 +455,18 @@ function DataManager({
             />
             <button type="button" className="action-button" onClick={handleAddGrade}>
               Add Grade
+            </button>
+          </div>
+
+          <div className="inline-form">
+            <input
+              type="text"
+              placeholder="e.g. Term 4"
+              value={newTerm}
+              onChange={(e) => setNewTerm(e.target.value)}
+            />
+            <button type="button" className="action-button" onClick={handleAddTerm}>
+              Add Term
             </button>
           </div>
         </div>
@@ -451,6 +493,14 @@ function DataManager({
               {grades.map((grade) => (
                 <option key={grade} value={grade}>
                   {grade}
+                </option>
+              ))}
+            </select>
+
+            <select name="term" value={formData.term} onChange={handleBasicChange}>
+              {terms.map((term) => (
+                <option key={term} value={term}>
+                  {term}
                 </option>
               ))}
             </select>

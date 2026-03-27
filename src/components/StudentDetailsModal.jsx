@@ -17,7 +17,7 @@ function StudentDetailsModal({ student, subjects, onClose }) {
           <div>
             <h2>{student.name}</h2>
             <p>
-              {student.gender} • {student.grade}
+              {student.gender} • {student.grade} • {student.term || 'Term 1'}
             </p>
           </div>
 

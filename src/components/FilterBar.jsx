@@ -9,9 +9,12 @@ function FilterBar({
   setSelectedRisk,
   selectedSubject,
   setSelectedSubject,
+  selectedTerm,
+  setSelectedTerm,
   searchTerm,
   setSearchTerm,
   gradeOptions,
+  termOptions,
   subjects,
 }) {
   return (
@@ -38,6 +41,22 @@ function FilterBar({
           {gradeOptions.map((grade) => (
             <option key={grade} value={grade}>
               {grade}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="filter-group">
+        <label htmlFor="term-filter">Filter by Term</label>
+        <select
+          id="term-filter"
+          value={selectedTerm}
+          onChange={(e) => setSelectedTerm(e.target.value)}
+        >
+          <option value="All">All Terms</option>
+          {termOptions.map((term) => (
+            <option key={term} value={term}>
+              {term}
             </option>
           ))}
         </select>

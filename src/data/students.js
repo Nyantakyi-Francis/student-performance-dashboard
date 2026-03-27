@@ -4,6 +4,7 @@ const students = [
     name: 'Ama Mensah',
     gender: 'Female',
     grade: 'Grade 7',
+        term: 'Term 1',
     scores: {
       english: 85,
       mathematics: 78,
@@ -16,6 +17,7 @@ const students = [
     name: 'Kwame Asare',
     gender: 'Male',
     grade: 'Grade 7',
+        term: 'Term 1',
     scores: {
       english: 70,
       mathematics: 65,
@@ -28,6 +30,7 @@ const students = [
     name: 'Akosua Boateng',
     gender: 'Female',
     grade: 'Grade 8',
+        term: 'Term 1',
     scores: {
       english: 91,
       mathematics: 88,
@@ -40,6 +43,7 @@ const students = [
     name: 'Yaw Owusu',
     gender: 'Male',
     grade: 'Grade 8',
+        term: 'Term 1',
     scores: {
       english: 62,
       mathematics: 55,
@@ -52,6 +56,7 @@ const students = [
     name: 'Efua Koomson',
     gender: 'Female',
     grade: 'Grade 9',
+        term: 'Term 1',
     scores: {
       english: 87,
       mathematics: 92,
@@ -64,6 +69,7 @@ const students = [
     name: 'Kojo Frimpong',
     gender: 'Male',
     grade: 'Grade 9',
+        term: 'Term 1',
     scores: {
       english: 55,
       mathematics: 48,
@@ -76,6 +82,7 @@ const students = [
     name: 'Adwoa Serwaa',
     gender: 'Female',
     grade: 'Grade 7',
+        term: 'Term 1',
     scores: {
       english: 77,
       mathematics: 81,
@@ -88,6 +95,7 @@ const students = [
     name: 'Kofi Badu',
     gender: 'Male',
     grade: 'Grade 8',
+    term: 'Term 1',
     scores: {
       english: 68,
       mathematics: 73,

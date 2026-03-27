@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 import initialStudents from './data/students'
-import { defaultSubjects, defaultGrades } from './data/config'
+import { defaultSubjects, defaultGrades, defaultTerms } from './data/config'
 import DashboardCards from './components/DashboardCards'
 import SubjectBarChart from './components/SubjectBarChart'
 import PerformancePieChart from './components/PerformancePieChart'
@@ -13,18 +13,26 @@ import StudentDetailsModal from './components/StudentDetailsModal'
 import { getStudentAverage, getRiskLevel } from './utils/analytics'
 
 function App() {
-  const [students, setStudents] = useState(initialStudents)
+  const normalizedInitialStudents = initialStudents.map((student) => ({
+    ...student,
+    term: student.term || 'Term 1',
+  }))
+
+  const [students, setStudents] = useState(normalizedInitialStudents)
   const [subjects, setSubjects] = useState(defaultSubjects)
   const [grades, setGrades] = useState(defaultGrades)
+  const [terms, setTerms] = useState(defaultTerms)
   const [selectedGrade, setSelectedGrade] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
   const [selectedRisk, setSelectedRisk] = useState('All')
   const [selectedSubject, setSelectedSubject] = useState('All')
+  const [selectedTerm, setSelectedTerm] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
   const [viewingStudent, setViewingStudent] = useState(null)
 
   const availableGrades = [...new Set([...grades, ...students.map((student) => student.grade)])]
+  const availableTerms = [...new Set([...terms, ...students.map((student) => student.term || 'Term 1')])]
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -47,12 +55,16 @@ function App() {
         selectedSubject === 'All' ||
         Object.prototype.hasOwnProperty.call(student.scores || {}, selectedSubject)
 
+      const matchesTerm =
+        selectedTerm === 'All' || (student.term || 'Term 1') === selectedTerm
+
       return (
         matchesGrade &&
         matchesGender &&
         matchesRisk &&
         matchesSearch &&
-        matchesSubject
+        matchesSubject &&
+        matchesTerm
       )
     })
   }, [
@@ -62,6 +74,7 @@ function App() {
     selectedGender,
     selectedRisk,
     selectedSubject,
+    selectedTerm,
     searchTerm,
   ])
 
@@ -111,6 +124,8 @@ function App() {
           setSubjects={setSubjects}
           grades={grades}
           setGrades={setGrades}
+          terms={terms}
+          setTerms={setTerms}
           editingStudent={editingStudent}
           setEditingStudent={setEditingStudent}
         />
@@ -124,9 +139,12 @@ function App() {
           setSelectedRisk={setSelectedRisk}
           selectedSubject={selectedSubject}
           setSelectedSubject={setSelectedSubject}
+          selectedTerm={selectedTerm}
+          setSelectedTerm={setSelectedTerm}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           gradeOptions={availableGrades}
+          termOptions={availableTerms}
           subjects={subjects}
         />
 

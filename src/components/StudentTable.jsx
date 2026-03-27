@@ -24,6 +24,7 @@ function StudentTable({
                 <th>Name</th>
                 <th>Gender</th>
                 <th>Grade</th>
+                <th>Term</th>
                 {subjects.map((subject) => (
                   <th key={subject}>{formatSubjectLabel(subject)}</th>
                 ))}
@@ -43,6 +44,7 @@ function StudentTable({
                     <td>{student.name}</td>
                     <td>{student.gender}</td>
                     <td>{student.grade}</td>
+                    <td>{student.term || 'Term 1'}</td>
 
                     {subjects.map((subject) => (
                       <td key={subject}>{student.scores?.[subject] ?? 0}</td>
