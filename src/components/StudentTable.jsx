@@ -1,4 +1,5 @@
 import { formatSubjectLabel } from '../data/config'
+import { getStudentAverage, getRiskLevel } from '../utils/analytics'
 
 function StudentTable({ students, subjects, onDeleteStudent, onEditStudent }) {
   return (
@@ -21,37 +22,41 @@ function StudentTable({ students, subjects, onDeleteStudent, onEditStudent }) {
                   <th key={subject}>{formatSubjectLabel(subject)}</th>
                 ))}
                 <th>Average</th>
+                <th>Risk Level</th>
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {students.map((student) => {
-                const total = subjects.reduce(
-                  (sum, subject) => sum + (student.scores[subject] ?? 0),
-                  0
-                )
-                const average = total / subjects.length
+                const average = getStudentAverage(student, subjects)
+                const riskLevel = getRiskLevel(average)
 
                 return (
                   <tr key={student.id}>
                     <td>{student.name}</td>
                     <td>{student.gender}</td>
                     <td>{student.grade}</td>
+
                     {subjects.map((subject) => (
-                      <td key={subject}>{student.scores[subject] ?? 0}</td>
+                      <td key={subject}>{student.scores?.[subject] ?? 0}</td>
                     ))}
+
                     <td>{average.toFixed(1)}%</td>
+                    <td>
+                      <span className={`risk-badge ${riskLevel.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {riskLevel}
+                      </span>
+                    </td>
                     <td>
                       <div className="table-actions">
                         <button
-                          type="button"
                           className="edit-button"
                           onClick={() => onEditStudent(student)}
                         >
                           Edit
                         </button>
                         <button
-                          type="button"
                           className="delete-button"
                           onClick={() => onDeleteStudent(student.id)}
                         >

@@ -8,6 +8,7 @@ import PerformancePieChart from './components/PerformancePieChart'
 import StudentTable from './components/StudentTable'
 import FilterBar from './components/FilterBar'
 import DataManager from './components/DataManager'
+import { getStudentAverage, getRiskLevel } from './utils/analytics'
 
 function App() {
   const [students, setStudents] = useState(initialStudents)
@@ -15,20 +16,32 @@ function App() {
   const [grades, setGrades] = useState(defaultGrades)
   const [selectedGrade, setSelectedGrade] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
+  const [selectedRisk, setSelectedRisk] = useState('All')
+  const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
 
   const availableGrades = [...new Set([...grades, ...students.map((student) => student.grade)])]
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
+      const average = getStudentAverage(student, subjects)
+      const riskLevel = getRiskLevel(average)
+
       const matchesGrade =
         selectedGrade === 'All' || student.grade === selectedGrade
+
       const matchesGender =
         selectedGender === 'All' || student.gender === selectedGender
 
-      return matchesGrade && matchesGender
+      const matchesRisk =
+        selectedRisk === 'All' || riskLevel === selectedRisk
+
+      const matchesSearch =
+        student.name.toLowerCase().includes(searchTerm.toLowerCase())
+
+      return matchesGrade && matchesGender && matchesRisk && matchesSearch
     })
-  }, [students, selectedGrade, selectedGender])
+  }, [students, subjects, selectedGrade, selectedGender, selectedRisk, searchTerm])
 
   const handleDeleteStudent = (id) => {
     setStudents((prev) => prev.filter((student) => student.id !== id))
@@ -47,8 +60,7 @@ function App() {
       <header className="header">
         <h1>Student Performance Analytics Dashboard</h1>
         <p>
-          Track student results, class averages, and subject performance in one
-          place.
+          Track student results, class averages, and subject performance in one place.
         </p>
       </header>
 
@@ -56,12 +68,12 @@ function App() {
         <DataManager
           students={students}
           setStudents={setStudents}
-          editingStudent={editingStudent}
-          setEditingStudent={setEditingStudent}
           subjects={subjects}
           setSubjects={setSubjects}
           grades={grades}
           setGrades={setGrades}
+          editingStudent={editingStudent}
+          setEditingStudent={setEditingStudent}
         />
 
         <FilterBar
@@ -69,6 +81,10 @@ function App() {
           setSelectedGrade={setSelectedGrade}
           selectedGender={selectedGender}
           setSelectedGender={setSelectedGender}
+          selectedRisk={selectedRisk}
+          setSelectedRisk={setSelectedRisk}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
           gradeOptions={availableGrades}
         />
 
@@ -86,18 +102,17 @@ function App() {
           onEditStudent={handleEditStudent}
         />
       </main>
+
       <footer className="footer">
-  <p>
-    Built by{' '}
-    <a
-      href="https://nyantakyi-francis.github.io/portfolio/"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Nyantakyi Francis
-    </a>
-  </p>
-</footer>
+        Created by{' '}
+        <a
+          href="https://nyantakyi-francis.github.io/portfolio/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Nyantakyi Francis
+        </a>
+      </footer>
     </div>
   )
 }
