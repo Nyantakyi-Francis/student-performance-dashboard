@@ -506,3 +506,219 @@ tbody tr:hover {
   background: #fee2e2;
   color: #b91c1c;
 }
+
+.manager-card {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.upload-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 220px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.upload-mode select {
+  padding: 0.78rem 0.9rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.upload-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.manager-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.manager-side,
+.manager-main {
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  border-radius: 20px;
+  padding: 1.2rem;
+}
+
+.manager-side h3,
+.manager-main h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #1e3a8a;
+}
+
+.inline-form {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.inline-form input {
+  flex: 1;
+  padding: 0.82rem 0.9rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.student-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.85rem;
+}
+
+.student-form input,
+.student-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.82rem 0.9rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.student-form input:focus,
+.student-form select:focus,
+.inline-form input:focus,
+.upload-mode select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.action-button {
+  border: none;
+  border-radius: 14px;
+  padding: 0.85rem 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
+}
+
+.action-button.secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  box-shadow: none;
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.dataset-note {
+  margin: 0;
+  color: #475569;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .manager-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .inline-form {
+    flex-direction: column;
+  }
+
+  .manager-actions {
+    align-items: stretch;
+  }
+
+  .upload-buttons,
+  .form-actions,
+  .export-actions {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+}
+.insights-panel {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(14px);
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(191, 219, 254, 0.8);
+  border-radius: 18px;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.insight-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.65rem;
+  font-size: 1rem;
+  color: #1e3a8a;
+}
+
+.insight-card p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.6;
+}

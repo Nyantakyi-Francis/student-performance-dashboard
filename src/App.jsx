@@ -8,7 +8,9 @@ import PerformancePieChart from './components/PerformancePieChart'
 import StudentTable from './components/StudentTable'
 import FilterBar from './components/FilterBar'
 import DataManager from './components/DataManager'
+import InsightsPanel from './components/InsightsPanel'
 import { getStudentAverage, getRiskLevel } from './utils/analytics'
+
 
 function App() {
   const [students, setStudents] = useState(initialStudents)
@@ -88,12 +90,14 @@ function App() {
           gradeOptions={availableGrades}
         />
 
-        <DashboardCards students={filteredStudents} subjects={subjects} />
+<DashboardCards students={filteredStudents} subjects={subjects} />
 
-        <section className="charts-grid">
-          <SubjectBarChart students={filteredStudents} subjects={subjects} />
-          <PerformancePieChart students={filteredStudents} subjects={subjects} />
-        </section>
+<InsightsPanel students={filteredStudents} subjects={subjects} />
+
+<section className="charts-grid">
+  <SubjectBarChart students={filteredStudents} subjects={subjects} />
+  <PerformancePieChart students={filteredStudents} subjects={subjects} />
+</section>
 
         <StudentTable
           students={filteredStudents}

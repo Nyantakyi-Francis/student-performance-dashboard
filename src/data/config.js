@@ -15,5 +15,10 @@ export const formatSubjectLabel = (subject) => {
     socialStudies: 'Social Studies',
   }
 
-  return labels[subject] || subject
+  if (labels[subject]) return labels[subject]
+
+  return subject
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (char) => char.toUpperCase())
+    .trim()
 }
