@@ -9,6 +9,7 @@ import StudentTable from './components/StudentTable'
 import FilterBar from './components/FilterBar'
 import DataManager from './components/DataManager'
 import InsightsPanel from './components/InsightsPanel'
+import StudentDetailsModal from './components/StudentDetailsModal'
 import { getStudentAverage, getRiskLevel } from './utils/analytics'
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
   const [selectedSubject, setSelectedSubject] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
+  const [viewingStudent, setViewingStudent] = useState(null)
 
   const availableGrades = [...new Set([...grades, ...students.map((student) => student.grade)])]
 
@@ -64,7 +66,9 @@ function App() {
   ])
 
   const chartSubjects =
-    selectedSubject === 'All' ? subjects : subjects.filter((subject) => subject === selectedSubject)
+    selectedSubject === 'All'
+      ? subjects
+      : subjects.filter((subject) => subject === selectedSubject)
 
   const handleDeleteStudent = (id) => {
     setStudents((prev) => prev.filter((student) => student.id !== id))
@@ -72,10 +76,22 @@ function App() {
     if (editingStudent && editingStudent.id === id) {
       setEditingStudent(null)
     }
+
+    if (viewingStudent && viewingStudent.id === id) {
+      setViewingStudent(null)
+    }
   }
 
   const handleEditStudent = (student) => {
     setEditingStudent(student)
+  }
+
+  const handleViewStudent = (student) => {
+    setViewingStudent(student)
+  }
+
+  const handleCloseModal = () => {
+    setViewingStudent(null)
   }
 
   return (
@@ -128,8 +144,15 @@ function App() {
           subjects={subjects}
           onDeleteStudent={handleDeleteStudent}
           onEditStudent={handleEditStudent}
+          onViewStudent={handleViewStudent}
         />
       </main>
+
+      <StudentDetailsModal
+        student={viewingStudent}
+        subjects={subjects}
+        onClose={handleCloseModal}
+      />
 
       <footer className="footer">
         Created by{' '}

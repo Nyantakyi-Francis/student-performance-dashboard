@@ -1,7 +1,13 @@
 import { formatSubjectLabel } from '../data/config'
 import { getStudentAverage, getRiskLevel } from '../utils/analytics'
 
-function StudentTable({ students, subjects, onDeleteStudent, onEditStudent }) {
+function StudentTable({
+  students,
+  subjects,
+  onDeleteStudent,
+  onEditStudent,
+  onViewStudent,
+}) {
   return (
     <section className="table-card">
       <div className="section-heading">
@@ -44,18 +50,30 @@ function StudentTable({ students, subjects, onDeleteStudent, onEditStudent }) {
 
                     <td>{average.toFixed(1)}%</td>
                     <td>
-                      <span className={`risk-badge ${riskLevel.toLowerCase().replace(/\s+/g, '-')}`}>
+                      <span
+                        className={`risk-badge ${riskLevel
+                          .toLowerCase()
+                          .replace(/\s+/g, '-')}`}
+                      >
                         {riskLevel}
                       </span>
                     </td>
                     <td>
                       <div className="table-actions">
                         <button
+                          className="view-button"
+                          onClick={() => onViewStudent(student)}
+                        >
+                          View
+                        </button>
+
+                        <button
                           className="edit-button"
                           onClick={() => onEditStudent(student)}
                         >
                           Edit
                         </button>
+
                         <button
                           className="delete-button"
                           onClick={() => onDeleteStudent(student.id)}
