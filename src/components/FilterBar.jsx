@@ -1,3 +1,5 @@
+import { formatSubjectLabel } from '../data/config'
+
 function FilterBar({
   selectedGrade,
   setSelectedGrade,
@@ -5,9 +7,12 @@ function FilterBar({
   setSelectedGender,
   selectedRisk,
   setSelectedRisk,
+  selectedSubject,
+  setSelectedSubject,
   searchTerm,
   setSearchTerm,
   gradeOptions,
+  subjects,
 }) {
   return (
     <section className="filter-bar">
@@ -63,6 +68,22 @@ function FilterBar({
           <option value="Good">Good</option>
           <option value="Average">Average</option>
           <option value="At Risk">At Risk</option>
+        </select>
+      </div>
+
+      <div className="filter-group">
+        <label htmlFor="subject-filter">Filter by Subject</label>
+        <select
+          id="subject-filter"
+          value={selectedSubject}
+          onChange={(e) => setSelectedSubject(e.target.value)}
+        >
+          <option value="All">All Subjects</option>
+          {subjects.map((subject) => (
+            <option key={subject} value={subject}>
+              {formatSubjectLabel(subject)}
+            </option>
+          ))}
         </select>
       </div>
     </section>

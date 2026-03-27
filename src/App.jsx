@@ -11,7 +11,6 @@ import DataManager from './components/DataManager'
 import InsightsPanel from './components/InsightsPanel'
 import { getStudentAverage, getRiskLevel } from './utils/analytics'
 
-
 function App() {
   const [students, setStudents] = useState(initialStudents)
   const [subjects, setSubjects] = useState(defaultSubjects)
@@ -19,6 +18,7 @@ function App() {
   const [selectedGrade, setSelectedGrade] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
   const [selectedRisk, setSelectedRisk] = useState('All')
+  const [selectedSubject, setSelectedSubject] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
 
@@ -41,9 +41,30 @@ function App() {
       const matchesSearch =
         student.name.toLowerCase().includes(searchTerm.toLowerCase())
 
-      return matchesGrade && matchesGender && matchesRisk && matchesSearch
+      const matchesSubject =
+        selectedSubject === 'All' ||
+        Object.prototype.hasOwnProperty.call(student.scores || {}, selectedSubject)
+
+      return (
+        matchesGrade &&
+        matchesGender &&
+        matchesRisk &&
+        matchesSearch &&
+        matchesSubject
+      )
     })
-  }, [students, subjects, selectedGrade, selectedGender, selectedRisk, searchTerm])
+  }, [
+    students,
+    subjects,
+    selectedGrade,
+    selectedGender,
+    selectedRisk,
+    selectedSubject,
+    searchTerm,
+  ])
+
+  const chartSubjects =
+    selectedSubject === 'All' ? subjects : subjects.filter((subject) => subject === selectedSubject)
 
   const handleDeleteStudent = (id) => {
     setStudents((prev) => prev.filter((student) => student.id !== id))
@@ -85,19 +106,22 @@ function App() {
           setSelectedGender={setSelectedGender}
           selectedRisk={selectedRisk}
           setSelectedRisk={setSelectedRisk}
+          selectedSubject={selectedSubject}
+          setSelectedSubject={setSelectedSubject}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           gradeOptions={availableGrades}
+          subjects={subjects}
         />
 
-<DashboardCards students={filteredStudents} subjects={subjects} />
+        <DashboardCards students={filteredStudents} subjects={chartSubjects} />
 
-<InsightsPanel students={filteredStudents} subjects={subjects} />
+        <InsightsPanel students={filteredStudents} subjects={chartSubjects} />
 
-<section className="charts-grid">
-  <SubjectBarChart students={filteredStudents} subjects={subjects} />
-  <PerformancePieChart students={filteredStudents} subjects={subjects} />
-</section>
+        <section className="charts-grid">
+          <SubjectBarChart students={filteredStudents} subjects={chartSubjects} />
+          <PerformancePieChart students={filteredStudents} subjects={chartSubjects} />
+        </section>
 
         <StudentTable
           students={filteredStudents}
