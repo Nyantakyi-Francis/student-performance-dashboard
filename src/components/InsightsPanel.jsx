@@ -1,7 +1,13 @@
 import { formatSubjectLabel } from '../data/config'
-import { getStudentAverage, getRiskLevel } from '../utils/analytics'
+import {
+  getImprovementLeaders,
+  getStudentAverage,
+  getSubjectAverages,
+  getRiskLevel,
+  getUniqueStudentCount,
+} from '../utils/analytics'
 
-function InsightsPanel({ students, subjects }) {
+function InsightsPanel({ students, subjects, terms }) {
   if (!students.length || !subjects.length) {
     return (
       <section className="insights-panel">
@@ -13,16 +19,7 @@ function InsightsPanel({ students, subjects }) {
     )
   }
 
-  const subjectAverages = subjects.map((subject) => {
-    const total = students.reduce((sum, student) => {
-      return sum + (student.scores?.[subject] ?? 0)
-    }, 0)
-
-    return {
-      subject,
-      average: total / students.length,
-    }
-  })
+  const subjectAverages = getSubjectAverages(students, subjects)
 
   const bestSubject = subjectAverages.reduce((best, current) =>
     current.average > best.average ? current : best
@@ -36,11 +33,13 @@ function InsightsPanel({ students, subjects }) {
     const average = getStudentAverage(student, subjects)
     return getRiskLevel(average) === 'At Risk'
   })
+  const atRiskCount = getUniqueStudentCount(atRiskStudents)
 
   const excellentStudents = students.filter((student) => {
     const average = getStudentAverage(student, subjects)
     return getRiskLevel(average) === 'Excellent'
   })
+  const excellentCount = getUniqueStudentCount(excellentStudents)
 
   const gradePerformanceMap = {}
 
@@ -73,6 +72,12 @@ function InsightsPanel({ students, subjects }) {
     current.average < weakest.average ? current : weakest
   )
 
+  const { largestDrop, mostImproved } = getImprovementLeaders(
+    students,
+    subjects,
+    terms
+  )
+
   return (
     <section className="insights-panel">
       <div className="section-heading">
@@ -100,17 +105,18 @@ function InsightsPanel({ students, subjects }) {
         <article className="insight-card">
           <h3>At-Risk Students</h3>
           <p>
-            There {atRiskStudents.length === 1 ? 'is' : 'are'}{' '}
-            <strong>{atRiskStudents.length}</strong>{' '}
-            student{atRiskStudents.length === 1 ? '' : 's'} currently classified as at risk.
+            There {atRiskCount === 1 ? 'is' : 'are'} <strong>{atRiskCount}</strong>{' '}
+            student{atRiskCount === 1 ? '' : 's'} currently flagged as at risk in
+            the selected data.
           </p>
         </article>
 
         <article className="insight-card">
           <h3>Excellent Students</h3>
           <p>
-            <strong>{excellentStudents.length}</strong>{' '}
-            student{excellentStudents.length === 1 ? '' : 's'} are currently performing at an excellent level.
+            <strong>{excellentCount}</strong> student
+            {excellentCount === 1 ? '' : 's'} are currently performing at an
+            excellent level.
           </p>
         </article>
 
@@ -127,6 +133,36 @@ function InsightsPanel({ students, subjects }) {
           <p>
             {weakestGrade.grade} currently has the lowest average at{' '}
             <strong>{weakestGrade.average.toFixed(1)}%</strong>.
+          </p>
+        </article>
+
+        <article className="insight-card">
+          <h3>Most Improved Student</h3>
+          <p>
+            {mostImproved ? (
+              <>
+                <strong>{mostImproved.name}</strong> improved by{' '}
+                <strong>{mostImproved.change.toFixed(1)}</strong> points from{' '}
+                {mostImproved.startTerm} to {mostImproved.endTerm}.
+              </>
+            ) : (
+              'Add multiple terms for the same student to unlock progress tracking.'
+            )}
+          </p>
+        </article>
+
+        <article className="insight-card">
+          <h3>Largest Drop</h3>
+          <p>
+            {largestDrop && largestDrop.change < 0 ? (
+              <>
+                <strong>{largestDrop.name}</strong> dropped by{' '}
+                <strong>{Math.abs(largestDrop.change).toFixed(1)}</strong> points
+                between {largestDrop.startTerm} and {largestDrop.endTerm}.
+              </>
+            ) : (
+              'No negative trend was detected in the current comparison set.'
+            )}
           </p>
         </article>
       </div>

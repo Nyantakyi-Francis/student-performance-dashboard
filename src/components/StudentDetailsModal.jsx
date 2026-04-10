@@ -1,7 +1,27 @@
+import { useEffect } from 'react'
 import { formatSubjectLabel } from '../data/config'
 import { getStudentAverage, getRiskLevel } from '../utils/analytics'
 
 function StudentDetailsModal({ student, subjects, onClose }) {
+  useEffect(() => {
+    if (!student) return undefined
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [onClose, student])
+
   if (!student) return null
 
   const average = getStudentAverage(student, subjects)
@@ -11,18 +31,26 @@ function StudentDetailsModal({ student, subjects, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="student-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="student-modal-title"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header">
           <div>
-            <h2>{student.name}</h2>
+            <h2 id="student-modal-title">{student.name}</h2>
             <p>
-              {student.gender} • {student.grade} • {student.term || 'Term 1'}
+              {student.gender} / {student.grade} / {student.term || 'Term 1'}
             </p>
           </div>
 
-          <button className="modal-close-button" onClick={onClose}>
-            ×
+          <button
+            type="button"
+            className="modal-close-button"
+            aria-label="Close student details"
+            onClick={onClose}
+          >
+            x
           </button>
         </div>
 

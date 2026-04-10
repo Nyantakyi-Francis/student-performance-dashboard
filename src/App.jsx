@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import initialStudents from './data/students'
 import { defaultSubjects, defaultGrades, defaultTerms } from './data/config'
@@ -10,18 +10,69 @@ import FilterBar from './components/FilterBar'
 import DataManager from './components/DataManager'
 import InsightsPanel from './components/InsightsPanel'
 import StudentDetailsModal from './components/StudentDetailsModal'
-import { getStudentAverage, getRiskLevel } from './utils/analytics'
+import TermTrendChart from './components/TermTrendChart'
+import { filterStudents } from './utils/filters'
 
-function App() {
-  const normalizedInitialStudents = initialStudents.map((student) => ({
+const DASHBOARD_STORAGE_KEY = 'student-performance-dashboard:v2'
+
+function normalizeStudents(records) {
+  return records.map((student) => ({
     ...student,
     term: student.term || 'Term 1',
   }))
+}
 
-  const [students, setStudents] = useState(normalizedInitialStudents)
-  const [subjects, setSubjects] = useState(defaultSubjects)
-  const [grades, setGrades] = useState(defaultGrades)
-  const [terms, setTerms] = useState(defaultTerms)
+function getDefaultDashboardState() {
+  return {
+    grades: defaultGrades,
+    students: normalizeStudents(initialStudents),
+    subjects: defaultSubjects,
+    terms: defaultTerms,
+  }
+}
+
+function loadDashboardState() {
+  const defaultState = getDefaultDashboardState()
+
+  if (typeof window === 'undefined') {
+    return defaultState
+  }
+
+  try {
+    const savedState = window.localStorage.getItem(DASHBOARD_STORAGE_KEY)
+    if (!savedState) return defaultState
+
+    const parsedState = JSON.parse(savedState)
+
+    return {
+      grades:
+        Array.isArray(parsedState.grades) && parsedState.grades.length > 0
+          ? parsedState.grades
+          : defaultState.grades,
+      students: Array.isArray(parsedState.students)
+        ? normalizeStudents(parsedState.students)
+        : defaultState.students,
+      subjects:
+        Array.isArray(parsedState.subjects) && parsedState.subjects.length > 0
+          ? parsedState.subjects
+          : defaultState.subjects,
+      terms:
+        Array.isArray(parsedState.terms) && parsedState.terms.length > 0
+          ? parsedState.terms
+          : defaultState.terms,
+    }
+  } catch {
+    return defaultState
+  }
+}
+
+const persistedDashboardState = loadDashboardState()
+
+function App() {
+  const [students, setStudents] = useState(persistedDashboardState.students)
+  const [subjects, setSubjects] = useState(persistedDashboardState.subjects)
+  const [grades, setGrades] = useState(persistedDashboardState.grades)
+  const [terms, setTerms] = useState(persistedDashboardState.terms)
   const [selectedGrade, setSelectedGrade] = useState('All')
   const [selectedGender, setSelectedGender] = useState('All')
   const [selectedRisk, setSelectedRisk] = useState('All')
@@ -31,52 +82,37 @@ function App() {
   const [editingStudent, setEditingStudent] = useState(null)
   const [viewingStudent, setViewingStudent] = useState(null)
 
-  const availableGrades = [...new Set([...grades, ...students.map((student) => student.grade)])]
-  const availableTerms = [...new Set([...terms, ...students.map((student) => student.term || 'Term 1')])]
+  useEffect(() => {
+    if (typeof window === 'undefined') return
 
-  const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
-      const average = getStudentAverage(student, subjects)
-      const riskLevel = getRiskLevel(average)
+    window.localStorage.setItem(
+      DASHBOARD_STORAGE_KEY,
+      JSON.stringify({
+        grades,
+        students,
+        subjects,
+        terms,
+      })
+    )
+  }, [grades, students, subjects, terms])
 
-      const matchesGrade =
-        selectedGrade === 'All' || student.grade === selectedGrade
-
-      const matchesGender =
-        selectedGender === 'All' || student.gender === selectedGender
-
-      const matchesRisk =
-        selectedRisk === 'All' || riskLevel === selectedRisk
-
-      const matchesSearch =
-        student.name.toLowerCase().includes(searchTerm.toLowerCase())
-
-      const matchesSubject =
-        selectedSubject === 'All' ||
-        Object.prototype.hasOwnProperty.call(student.scores || {}, selectedSubject)
-
-      const matchesTerm =
-        selectedTerm === 'All' || (student.term || 'Term 1') === selectedTerm
-
-      return (
-        matchesGrade &&
-        matchesGender &&
-        matchesRisk &&
-        matchesSearch &&
-        matchesSubject &&
-        matchesTerm
-      )
-    })
-  }, [
-    students,
-    subjects,
-    selectedGrade,
+  const filters = {
+    searchTerm,
     selectedGender,
+    selectedGrade,
     selectedRisk,
     selectedSubject,
     selectedTerm,
-    searchTerm,
-  ])
+  }
+
+  const availableGrades = [
+    ...new Set([...grades, ...students.map((student) => student.grade)]),
+  ]
+  const availableTerms = [
+    ...new Set([...terms, ...students.map((student) => student.term || 'Term 1')]),
+  ]
+
+  const filteredStudents = filterStudents(students, subjects, filters)
 
   const chartSubjects =
     selectedSubject === 'All'
@@ -84,7 +120,7 @@ function App() {
       : subjects.filter((subject) => subject === selectedSubject)
 
   const handleDeleteStudent = (id) => {
-    setStudents((prev) => prev.filter((student) => student.id !== id))
+    setStudents((previous) => previous.filter((student) => student.id !== id))
 
     if (editingStudent && editingStudent.id === id) {
       setEditingStudent(null)
@@ -112,7 +148,8 @@ function App() {
       <header className="header">
         <h1>Student Performance Analytics Dashboard</h1>
         <p>
-          Track student results, class averages, and subject performance in one place.
+          Import, analyze, and compare student performance across terms. Changes
+          save automatically in your browser.
         </p>
       </header>
 
@@ -150,12 +187,22 @@ function App() {
 
         <DashboardCards students={filteredStudents} subjects={chartSubjects} />
 
-        <InsightsPanel students={filteredStudents} subjects={chartSubjects} />
+        <InsightsPanel
+          students={filteredStudents}
+          subjects={chartSubjects}
+          terms={availableTerms}
+        />
 
         <section className="charts-grid">
           <SubjectBarChart students={filteredStudents} subjects={chartSubjects} />
           <PerformancePieChart students={filteredStudents} subjects={chartSubjects} />
         </section>
+
+        <TermTrendChart
+          students={filteredStudents}
+          subjects={chartSubjects}
+          terms={availableTerms}
+        />
 
         <StudentTable
           students={filteredStudents}

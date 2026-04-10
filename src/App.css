@@ -27,7 +27,7 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Aptos, sans-serif;
 }
 
 .header {
@@ -279,6 +279,36 @@
   overflow: hidden;
 }
 
+.chart-card-wide {
+  margin-bottom: 1rem;
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.chart-card-header h2 {
+  margin: 0 0 0.35rem;
+  color: #1e3a8a;
+}
+
+.chart-card-header p,
+.chart-description {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.chart-card-empty {
+  display: grid;
+  align-items: center;
+  min-height: 180px;
+}
+
 .chart-inner {
   position: relative;
   width: 100%;
@@ -444,7 +474,9 @@ tbody tr:hover {
   table {
     min-width: 640px;
   }
-}.footer {
+}
+
+.footer {
   text-align: center;
   padding: 1.2rem;
   margin-top: 1rem;
@@ -642,6 +674,15 @@ tbody tr:hover {
   box-shadow: 0 14px 28px rgba(37, 99, 235, 0.22);
 }
 
+.action-button:focus-visible,
+.view-button:focus-visible,
+.edit-button:focus-visible,
+.delete-button:focus-visible,
+.modal-close-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 2px;
+}
+
 .action-button.secondary {
   background: rgba(255, 255, 255, 0.92);
   color: #1d4ed8;
@@ -660,6 +701,7 @@ tbody tr:hover {
   margin: 0;
   color: #475569;
   font-weight: 600;
+  line-height: 1.6;
 }
 
 @media (max-width: 900px) {
@@ -819,7 +861,7 @@ tbody tr:hover {
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   cursor: pointer;
   font-weight: 700;
 }

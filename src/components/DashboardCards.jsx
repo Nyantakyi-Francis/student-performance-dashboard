@@ -1,11 +1,16 @@
 import { formatSubjectLabel } from '../data/config'
+import {
+  getClassAverage,
+  getSubjectAverages,
+  getUniqueStudentCount,
+} from '../utils/analytics'
 
 function DashboardCards({ students, subjects }) {
-  if (students.length === 0) {
+  if (students.length === 0 || subjects.length === 0) {
     return (
       <section className="cards-grid">
         <div className="dashboard-card">
-          <h3>Total Students</h3>
+          <h3>Unique Students</h3>
           <p>0</p>
         </div>
         <div className="dashboard-card">
@@ -24,35 +29,17 @@ function DashboardCards({ students, subjects }) {
     )
   }
 
-  const totalStudents = students.length
-
-  const subjectAverages = {}
-
-  subjects.forEach((subject) => {
-    const total = students.reduce(
-      (sum, student) => sum + (student.scores[subject] ?? 0),
-      0
-    )
-    subjectAverages[subject] = total / totalStudents
-  })
-
-  const classAverage =
-    Object.values(subjectAverages).reduce((sum, value) => sum + value, 0) /
-    subjects.length
-
-  const bestSubject = Object.entries(subjectAverages).reduce((a, b) =>
-    a[1] > b[1] ? a : b
-  )[0]
-
-  const weakestSubject = Object.entries(subjectAverages).reduce((a, b) =>
-    a[1] < b[1] ? a : b
-  )[0]
+  const uniqueStudents = getUniqueStudentCount(students)
+  const classAverage = getClassAverage(students, subjects)
+  const subjectAverages = getSubjectAverages(students, subjects)
+  const bestSubject = [...subjectAverages].sort((a, b) => b.average - a.average)[0]
+  const weakestSubject = [...subjectAverages].sort((a, b) => a.average - b.average)[0]
 
   const cards = [
-    { title: 'Total Students', value: totalStudents },
+    { title: 'Unique Students', value: uniqueStudents },
     { title: 'Class Average', value: `${classAverage.toFixed(1)}%` },
-    { title: 'Best Subject', value: formatSubjectLabel(bestSubject) },
-    { title: 'Weakest Subject', value: formatSubjectLabel(weakestSubject) },
+    { title: 'Best Subject', value: formatSubjectLabel(bestSubject.subject) },
+    { title: 'Weakest Subject', value: formatSubjectLabel(weakestSubject.subject) },
   ]
 
   return (

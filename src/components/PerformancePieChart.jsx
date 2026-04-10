@@ -10,7 +10,7 @@ import { Pie } from 'react-chartjs-2'
 ChartJS.register(ArcElement, Tooltip, Legend, Title)
 
 function PerformancePieChart({ students, subjects }) {
-  if (students.length === 0) {
+  if (students.length === 0 || subjects.length === 0) {
     return (
       <div className="chart-card">
         <h2>No data available for this filter</h2>
@@ -31,15 +31,15 @@ function PerformancePieChart({ students, subjects }) {
 
   const data = {
     labels: ['Pass', 'Fail'],
-datasets: [
-  {
-    label: 'Student Outcome',
-    data: [passCount, failCount],
-    backgroundColor: ['#34d399', '#f87171'],
-    borderColor: ['#059669', '#dc2626'],
-    borderWidth: 1,
-  },
-],
+    datasets: [
+      {
+        label: 'Student Outcome',
+        data: [passCount, failCount],
+        backgroundColor: ['#34d399', '#f87171'],
+        borderColor: ['#059669', '#dc2626'],
+        borderWidth: 1,
+      },
+    ],
   }
 
   const options = {

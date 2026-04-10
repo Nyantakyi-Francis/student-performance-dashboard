@@ -20,7 +20,7 @@ ChartJS.register(
 )
 
 function SubjectBarChart({ students, subjects }) {
-  if (students.length === 0) {
+  if (students.length === 0 || subjects.length === 0) {
     return (
       <div className="chart-card">
         <h2>No data available for this filter</h2>
@@ -40,16 +40,30 @@ function SubjectBarChart({ students, subjects }) {
 
   const data = {
     labels: subjects.map(formatSubjectLabel),
-datasets: [
-  {
-    label: 'Average Score',
-    data: averages,
-    backgroundColor: ['#60a5fa', '#34d399', '#a78bfa', '#f59e0b', '#f472b6', '#22c55e'],
-    borderColor: ['#2563eb', '#059669', '#7c3aed', '#d97706', '#db2777', '#16a34a'],
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-],
+    datasets: [
+      {
+        label: 'Average Score',
+        data: averages,
+        backgroundColor: [
+          '#60a5fa',
+          '#34d399',
+          '#a78bfa',
+          '#f59e0b',
+          '#f472b6',
+          '#22c55e',
+        ],
+        borderColor: [
+          '#2563eb',
+          '#059669',
+          '#7c3aed',
+          '#d97706',
+          '#db2777',
+          '#16a34a',
+        ],
+        borderWidth: 1,
+        borderRadius: 8,
+      },
+    ],
   }
 
   const options = {

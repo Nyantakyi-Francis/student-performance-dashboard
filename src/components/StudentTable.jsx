@@ -11,7 +11,7 @@ function StudentTable({
   return (
     <section className="table-card">
       <div className="section-heading">
-        <h2>Student Performance Table</h2>
+        <h2>Student Performance Records</h2>
       </div>
 
       {students.length === 0 ? (

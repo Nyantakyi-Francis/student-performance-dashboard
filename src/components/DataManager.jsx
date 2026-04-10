@@ -1,7 +1,22 @@
 import { useEffect, useState } from 'react'
 import Papa from 'papaparse'
-import * as XLSX from 'xlsx'
-import { formatSubjectLabel } from '../data/config'
+import sampleStudents from '../data/students'
+import {
+  defaultGrades,
+  defaultSubjects,
+  defaultTerms,
+  formatSubjectLabel,
+} from '../data/config'
+import {
+  buildStudentExportRows,
+  buildTemplateRows,
+  createEmptyScores,
+  detectSubjectsFromRows,
+  downloadBlobFile,
+  isValidStudentRecord,
+  normalizeKey,
+  normalizeStudentRecord,
+} from '../utils/studentData'
 
 function DataManager({
   students,
@@ -15,36 +30,15 @@ function DataManager({
   terms,
   setTerms,
 }) {
-  const normalizeKey = (value) => {
-    const clean = String(value || '').trim()
-    if (!clean) return ''
-
-    return clean
-      .replace(/\s+/g, ' ')
-      .replace(/[^a-zA-Z0-9 ]/g, '')
-      .split(' ')
-      .map((word, index) =>
-        index === 0
-          ? word.toLowerCase()
-          : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-      )
-      .join('')
-  }
-
-  const buildEmptyScores = () =>
-    subjects.reduce((acc, subject) => {
-      acc[subject] = ''
-      return acc
-    }, {})
-
-  const [formData, setFormData] = useState({
+  const getDefaultFormState = () => ({
     name: '',
     gender: 'Female',
     grade: grades[0] || 'Grade 7',
     term: terms[0] || 'Term 1',
-    scores: buildEmptyScores(),
+    scores: createEmptyScores(subjects),
   })
 
+  const [formData, setFormData] = useState(getDefaultFormState)
   const [uploadMode, setUploadMode] = useState('replace')
   const [newSubject, setNewSubject] = useState('')
   const [newGrade, setNewGrade] = useState('')
@@ -52,9 +46,9 @@ function DataManager({
 
   useEffect(() => {
     if (editingStudent) {
-      const mergedScores = subjects.reduce((acc, subject) => {
-        acc[subject] = editingStudent.scores[subject] ?? ''
-        return acc
+      const mergedScores = subjects.reduce((accumulator, subject) => {
+        accumulator[subject] = editingStudent.scores[subject] ?? ''
+        return accumulator
       }, {})
 
       setFormData({
@@ -64,71 +58,20 @@ function DataManager({
         term: editingStudent.term || (terms[0] || 'Term 1'),
         scores: mergedScores,
       })
-    } else {
-      setFormData({
-        name: '',
-        gender: 'Female',
-        grade: grades[0] || 'Grade 7',
-        term: terms[0] || 'Term 1',
-        scores: buildEmptyScores(),
-      })
+      return
     }
-  }, [editingStudent, subjects, grades, terms])
 
-  const reservedFields = ['id', 'name', 'gender', 'grade', 'term']
-
-  const detectSubjectsFromRows = (rows) => {
-    const detectedSubjects = new Set(subjects)
-
-    rows.forEach((row) => {
-      Object.keys(row).forEach((key) => {
-        const normalized = normalizeKey(key)
-        if (!normalized || reservedFields.includes(normalized)) return
-        detectedSubjects.add(normalized)
-      })
-    })
-
-    return Array.from(detectedSubjects)
-  }
-
-  const getRowValueByNormalizedKey = (row, targetKey) => {
-    const directMatch = row[targetKey]
-    if (directMatch !== undefined) return directMatch
-
-    const entry = Object.entries(row).find(([key]) => normalizeKey(key) === targetKey)
-    return entry ? entry[1] : undefined
-  }
-
-  const normalizeStudent = (row, allSubjects, index = 0) => {
-    const scoreObject = {}
-
-    allSubjects.forEach((subject) => {
-      const rawValue = getRowValueByNormalizedKey(row, subject)
-      const numericValue = Number(rawValue ?? 0)
-      scoreObject[subject] = Number.isNaN(numericValue) ? 0 : numericValue
-    })
-
-    return {
-      id: Date.now() + index,
-      name: String(getRowValueByNormalizedKey(row, 'name') ?? '').trim(),
-      gender: String(getRowValueByNormalizedKey(row, 'gender') ?? '').trim(),
-      grade: String(getRowValueByNormalizedKey(row, 'grade') ?? '').trim(),
-      term: String(getRowValueByNormalizedKey(row, 'term') ?? '').trim() || (terms[0] || 'Term 1'),
-      scores: scoreObject,
-    }
-  }
-
-  const isValidStudent = (student) => {
-    const scoreValues = Object.values(student.scores)
-
-    return (
-      student.name &&
-      student.gender &&
-      student.grade &&
-      student.term &&
-      scoreValues.every((score) => !Number.isNaN(score))
-    )
-  }
+    setFormData((previous) => ({
+      name: previous.name,
+      gender: previous.gender || 'Female',
+      grade: grades.includes(previous.grade) ? previous.grade : grades[0] || 'Grade 7',
+      term: terms.includes(previous.term) ? previous.term : terms[0] || 'Term 1',
+      scores: subjects.reduce((accumulator, subject) => {
+        accumulator[subject] = previous.scores?.[subject] ?? ''
+        return accumulator
+      }, {}),
+    }))
+  }, [editingStudent, grades, subjects, terms])
 
   const applyUploadData = (parsedStudents, detectedSubjects) => {
     if (parsedStudents.length === 0) {
@@ -139,16 +82,17 @@ function DataManager({
     setSubjects(detectedSubjects)
 
     const uploadedGrades = parsedStudents.map((student) => student.grade)
-    setGrades((prev) => [...new Set([...prev, ...uploadedGrades])])
+    setGrades((previous) => [...new Set([...previous, ...uploadedGrades])])
 
     const uploadedTerms = parsedStudents.map((student) => student.term)
-    setTerms((prev) => [...new Set([...prev, ...uploadedTerms])])
+    setTerms((previous) => [...new Set([...previous, ...uploadedTerms])])
 
     if (uploadMode === 'append') {
-      setStudents((prev) => [...prev, ...parsedStudents])
-    } else {
-      setStudents(parsedStudents)
+      setStudents((previous) => [...previous, ...parsedStudents])
+      return
     }
+
+    setStudents(parsedStudents)
   }
 
   const handleCsvUpload = (event) => {
@@ -159,11 +103,12 @@ function DataManager({
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const detectedSubjects = detectSubjectsFromRows(results.data)
-
+        const detectedSubjects = detectSubjectsFromRows(results.data, subjects)
         const parsedStudents = results.data
-          .map((row, index) => normalizeStudent(row, detectedSubjects, index))
-          .filter(isValidStudent)
+          .map((row, index) =>
+            normalizeStudentRecord(row, detectedSubjects, terms, index)
+          )
+          .filter(isValidStudentRecord)
 
         applyUploadData(parsedStudents, detectedSubjects)
       },
@@ -180,20 +125,21 @@ function DataManager({
     if (!file) return
 
     try {
+      const XLSX = await import('xlsx')
       const buffer = await file.arrayBuffer()
       const workbook = XLSX.read(buffer)
       const firstSheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[firstSheetName]
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
-
-      const detectedSubjects = detectSubjectsFromRows(jsonData)
-
+      const detectedSubjects = detectSubjectsFromRows(jsonData, subjects)
       const parsedStudents = jsonData
-        .map((row, index) => normalizeStudent(row, detectedSubjects, index))
-        .filter(isValidStudent)
+        .map((row, index) =>
+          normalizeStudentRecord(row, detectedSubjects, terms, index)
+        )
+        .filter(isValidStudentRecord)
 
       applyUploadData(parsedStudents, detectedSubjects)
-    } catch (error) {
+    } catch {
       alert('Failed to parse Excel file.')
     }
 
@@ -202,17 +148,17 @@ function DataManager({
 
   const handleBasicChange = (event) => {
     const { name, value } = event.target
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
     }))
   }
 
   const handleScoreChange = (subject, value) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previous) => ({
+      ...previous,
       scores: {
-        ...prev.scores,
+        ...previous.scores,
         [subject]: value,
       },
     }))
@@ -251,41 +197,34 @@ function DataManager({
     }
 
     if (editingStudent) {
-      setStudents((prev) =>
-        prev.map((student) =>
+      setStudents((previous) =>
+        previous.map((student) =>
           student.id === editingStudent.id ? studentRecord : student
         )
       )
       setEditingStudent(null)
     } else {
-      setStudents((prev) => [...prev, studentRecord])
+      setStudents((previous) => [...previous, studentRecord])
     }
 
-    setGrades((prev) => [...new Set([...prev, studentRecord.grade])])
-    setTerms((prev) => [...new Set([...prev, studentRecord.term])])
-
-    setFormData({
-      name: '',
-      gender: 'Female',
-      grade: grades[0] || 'Grade 7',
-      term: terms[0] || 'Term 1',
-      scores: buildEmptyScores(),
-    })
+    setGrades((previous) => [...new Set([...previous, studentRecord.grade])])
+    setTerms((previous) => [...new Set([...previous, studentRecord.term])])
+    setFormData(getDefaultFormState())
   }
 
   const handleCancelEdit = () => {
     setEditingStudent(null)
+    setFormData(getDefaultFormState())
   }
 
   const handleAddSubject = () => {
     const subjectKey = normalizeKey(newSubject)
-    if (!subjectKey) return
-    if (subjects.includes(subjectKey)) return
 
-    setSubjects((prev) => [...prev, subjectKey])
+    if (!subjectKey || subjects.includes(subjectKey)) return
 
-    setStudents((prev) =>
-      prev.map((student) => ({
+    setSubjects((previous) => [...previous, subjectKey])
+    setStudents((previous) =>
+      previous.map((student) => ({
         ...student,
         scores: {
           ...student.scores,
@@ -293,41 +232,35 @@ function DataManager({
         },
       }))
     )
-
     setNewSubject('')
   }
 
   const handleAddGrade = () => {
     const gradeValue = newGrade.trim()
-    if (!gradeValue) return
-    if (grades.includes(gradeValue)) return
+    if (!gradeValue || grades.includes(gradeValue)) return
 
-    setGrades((prev) => [...prev, gradeValue])
+    setGrades((previous) => [...previous, gradeValue])
     setNewGrade('')
   }
 
   const handleAddTerm = () => {
     const termValue = newTerm.trim()
-    if (!termValue) return
-    if (terms.includes(termValue)) return
+    if (!termValue || terms.includes(termValue)) return
 
-    setTerms((prev) => [...prev, termValue])
+    setTerms((previous) => [...previous, termValue])
     setNewTerm('')
   }
 
-  const resetToSampleData = async () => {
-    const studentsModule = await import('../data/students')
-    const configModule = await import('../data/config')
-
-    const resetStudents = studentsModule.default.map((student) => ({
+  const resetToSampleData = () => {
+    const resetStudents = sampleStudents.map((student) => ({
       ...student,
       term: student.term || 'Term 1',
     }))
 
     setStudents(resetStudents)
-    setSubjects(configModule.defaultSubjects)
-    setGrades(configModule.defaultGrades)
-    setTerms(configModule.defaultTerms)
+    setSubjects(defaultSubjects)
+    setGrades(defaultGrades)
+    setTerms(defaultTerms)
     setEditingStudent(null)
   }
 
@@ -337,57 +270,36 @@ function DataManager({
       return
     }
 
-    const exportData = students.map((student) => {
-      const row = {
-        name: student.name,
-        gender: student.gender,
-        grade: student.grade,
-        term: student.term || 'Term 1',
-      }
-
-      subjects.forEach((subject) => {
-        row[formatSubjectLabel(subject)] = student.scores[subject] ?? 0
-      })
-
-      return row
-    })
-
-    const csv = Papa.unparse(exportData)
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', 'student-performance-data.csv')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const csv = Papa.unparse(buildStudentExportRows(students, subjects))
+    downloadBlobFile(
+      csv,
+      'student-performance-data.csv',
+      'text/csv;charset=utf-8;'
+    )
   }
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
     if (students.length === 0) {
       alert('There is no data to export.')
       return
     }
 
-    const exportData = students.map((student) => {
-      const row = {
-        name: student.name,
-        gender: student.gender,
-        grade: student.grade,
-        term: student.term || 'Term 1',
-      }
-
-      subjects.forEach((subject) => {
-        row[formatSubjectLabel(subject)] = student.scores[subject] ?? 0
-      })
-
-      return row
-    })
-
+    const XLSX = await import('xlsx')
+    const exportData = buildStudentExportRows(students, subjects)
     const worksheet = XLSX.utils.json_to_sheet(exportData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
     XLSX.writeFile(workbook, 'student-performance-data.xlsx')
+  }
+
+  const downloadTemplateCsv = () => {
+    const csv = Papa.unparse(buildTemplateRows(subjects, grades, terms))
+
+    downloadBlobFile(
+      csv,
+      'student-performance-template.csv',
+      'text/csv;charset=utf-8;'
+    )
   }
 
   return (
@@ -395,18 +307,15 @@ function DataManager({
       <div className="section-heading">
         <h2>Manage Student Data</h2>
         <p>
-          Upload student records, add new students, edit entries, and expand the system
-          with more subjects, grades, and terms.
+          Upload student records, add new students, edit entries, and expand the
+          system with more subjects, grades, and terms.
         </p>
       </div>
 
       <div className="manager-actions">
         <label className="upload-mode">
           <span>Upload Mode</span>
-          <select
-            value={uploadMode}
-            onChange={(e) => setUploadMode(e.target.value)}
-          >
+          <select value={uploadMode} onChange={(event) => setUploadMode(event.target.value)}>
             <option value="replace">Replace current dataset</option>
             <option value="append">Append to current dataset</option>
           </select>
@@ -427,6 +336,14 @@ function DataManager({
               hidden
             />
           </label>
+
+          <button
+            type="button"
+            className="action-button secondary"
+            onClick={downloadTemplateCsv}
+          >
+            Download CSV Template
+          </button>
         </div>
       </div>
 
@@ -439,7 +356,7 @@ function DataManager({
               type="text"
               placeholder="e.g. Creative Arts"
               value={newSubject}
-              onChange={(e) => setNewSubject(e.target.value)}
+              onChange={(event) => setNewSubject(event.target.value)}
             />
             <button type="button" className="action-button" onClick={handleAddSubject}>
               Add Subject
@@ -451,7 +368,7 @@ function DataManager({
               type="text"
               placeholder="e.g. Grade 10"
               value={newGrade}
-              onChange={(e) => setNewGrade(e.target.value)}
+              onChange={(event) => setNewGrade(event.target.value)}
             />
             <button type="button" className="action-button" onClick={handleAddGrade}>
               Add Grade
@@ -463,7 +380,7 @@ function DataManager({
               type="text"
               placeholder="e.g. Term 4"
               value={newTerm}
-              onChange={(e) => setNewTerm(e.target.value)}
+              onChange={(event) => setNewTerm(event.target.value)}
             />
             <button type="button" className="action-button" onClick={handleAddTerm}>
               Add Term
@@ -513,7 +430,7 @@ function DataManager({
                 max="100"
                 placeholder={formatSubjectLabel(subject)}
                 value={formData.scores[subject] ?? ''}
-                onChange={(e) => handleScoreChange(subject, e.target.value)}
+                onChange={(event) => handleScoreChange(subject, event.target.value)}
                 required
               />
             ))}
@@ -554,7 +471,10 @@ function DataManager({
         </button>
       </div>
 
-      <p className="dataset-note">Current dataset size: {students.length} students</p>
+      <p className="dataset-note">
+        Current dataset size: {students.length} records. Changes save automatically
+        in this browser.
+      </p>
     </section>
   )
 }

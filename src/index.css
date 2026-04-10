@@ -14,5 +14,6 @@ body,
 body {
   min-height: 100vh;
   background: #f8fafc;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Aptos, sans-serif;
+  line-height: 1.5;
 }
