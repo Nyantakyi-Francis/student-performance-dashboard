@@ -10,6 +10,7 @@ import {
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 import { getTermPerformance } from '../utils/analytics'
+import { useMemo } from 'react'
 
 ChartJS.register(
   CategoryScale,
@@ -22,7 +23,10 @@ ChartJS.register(
 )
 
 function TermTrendChart({ students, subjects, terms }) {
-  const termPerformance = getTermPerformance(students, subjects, terms)
+  const termPerformance = useMemo(
+    () => getTermPerformance(students, subjects, terms),
+    [students, subjects, terms]
+  )
 
   if (termPerformance.length < 2) {
     return (

@@ -1,4 +1,5 @@
-import { formatSubjectLabel } from '../data/config'
+import { DEFAULT_TERM, formatSubjectLabel } from '../data/config.js'
+import { createId } from './ids'
 
 const RESERVED_FIELDS = ['id', 'name', 'gender', 'grade', 'term']
 
@@ -54,7 +55,7 @@ export function getRowValueByNormalizedKey(row, targetKey) {
   return entry ? entry[1] : undefined
 }
 
-export function normalizeStudentRecord(row, allSubjects, termOptions = [], index = 0) {
+export function normalizeStudentRecord(row, allSubjects, termOptions = []) {
   const scoreObject = {}
 
   allSubjects.forEach((subject) => {
@@ -64,13 +65,13 @@ export function normalizeStudentRecord(row, allSubjects, termOptions = [], index
   })
 
   return {
-    id: Date.now() + index,
+    id: createId(),
     name: String(getRowValueByNormalizedKey(row, 'name') ?? '').trim(),
     gender: String(getRowValueByNormalizedKey(row, 'gender') ?? '').trim(),
     grade: String(getRowValueByNormalizedKey(row, 'grade') ?? '').trim(),
     term:
       String(getRowValueByNormalizedKey(row, 'term') ?? '').trim() ||
-      (termOptions[0] || 'Term 1'),
+      (termOptions[0] || DEFAULT_TERM),
     scores: scoreObject,
   }
 }
@@ -93,7 +94,7 @@ export function buildStudentExportRows(students, subjects) {
       name: student.name,
       gender: student.gender,
       grade: student.grade,
-      term: student.term || 'Term 1',
+      term: student.term || DEFAULT_TERM,
     }
 
     subjects.forEach((subject) => {
@@ -109,7 +110,7 @@ export function buildTemplateRows(subjects, grades = [], terms = []) {
     name: 'Ama Mensah',
     gender: 'Female',
     grade: grades[0] || 'Grade 7',
-    term: terms[0] || 'Term 1',
+    term: terms[0] || DEFAULT_TERM,
   }
 
   subjects.forEach((subject, index) => {

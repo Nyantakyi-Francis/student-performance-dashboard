@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import initialStudents from './data/students'
-import { defaultSubjects, defaultGrades, defaultTerms } from './data/config'
+import { DEFAULT_TERM, defaultSubjects, defaultGrades, defaultTerms } from './data/config'
 import DashboardCards from './components/DashboardCards'
 import SubjectBarChart from './components/SubjectBarChart'
 import PerformancePieChart from './components/PerformancePieChart'
@@ -18,7 +18,7 @@ const DASHBOARD_STORAGE_KEY = 'student-performance-dashboard:v2'
 function normalizeStudents(records) {
   return records.map((student) => ({
     ...student,
-    term: student.term || 'Term 1',
+    term: student.term || DEFAULT_TERM,
   }))
 }
 
@@ -96,30 +96,51 @@ function App() {
     )
   }, [grades, students, subjects, terms])
 
-  const filters = {
-    searchTerm,
-    selectedGender,
-    selectedGrade,
-    selectedRisk,
-    selectedSubject,
-    selectedTerm,
-  }
+  const filters = useMemo(
+    () => ({
+      searchTerm,
+      selectedGender,
+      selectedGrade,
+      selectedRisk,
+      selectedSubject,
+      selectedTerm,
+    }),
+    [
+      searchTerm,
+      selectedGender,
+      selectedGrade,
+      selectedRisk,
+      selectedSubject,
+      selectedTerm,
+    ]
+  )
 
-  const availableGrades = [
-    ...new Set([...grades, ...students.map((student) => student.grade)]),
-  ]
-  const availableTerms = [
-    ...new Set([...terms, ...students.map((student) => student.term || 'Term 1')]),
-  ]
+  const availableGrades = useMemo(
+    () => [...new Set([...grades, ...students.map((student) => student.grade)])],
+    [grades, students]
+  )
+  const availableTerms = useMemo(
+    () => [
+      ...new Set([
+        ...terms,
+        ...students.map((student) => student.term || DEFAULT_TERM),
+      ]),
+    ],
+    [terms, students]
+  )
 
-  const filteredStudents = filterStudents(students, subjects, filters)
+  const filteredStudents = useMemo(
+    () => filterStudents(students, subjects, filters),
+    [filters, students, subjects]
+  )
 
-  const chartSubjects =
-    selectedSubject === 'All'
-      ? subjects
-      : subjects.filter((subject) => subject === selectedSubject)
+  const chartSubjects = useMemo(() => {
+    if (selectedSubject === 'All') return subjects
+    return subjects.filter((subject) => subject === selectedSubject)
+  }, [selectedSubject, subjects])
 
-  const handleDeleteStudent = (id) => {
+  const handleDeleteStudent = useCallback(
+    (id) => {
     setStudents((previous) => previous.filter((student) => student.id !== id))
 
     if (editingStudent && editingStudent.id === id) {
@@ -129,19 +150,21 @@ function App() {
     if (viewingStudent && viewingStudent.id === id) {
       setViewingStudent(null)
     }
-  }
+    },
+    [editingStudent, viewingStudent]
+  )
 
-  const handleEditStudent = (student) => {
+  const handleEditStudent = useCallback((student) => {
     setEditingStudent(student)
-  }
+  }, [])
 
-  const handleViewStudent = (student) => {
+  const handleViewStudent = useCallback((student) => {
     setViewingStudent(student)
-  }
+  }, [])
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setViewingStudent(null)
-  }
+  }, [])
 
   return (
     <div className="app">

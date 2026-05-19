@@ -1,4 +1,5 @@
 import { getRiskLevel, getStudentAverage } from './analytics'
+import { DEFAULT_TERM } from '../data/config.js'
 
 export function filterStudents(students, subjects, filters, options = {}) {
   const { includeTerm = true } = options
@@ -31,7 +32,7 @@ export function filterStudents(students, subjects, filters, options = {}) {
     const matchesTerm =
       !includeTerm ||
       filters.selectedTerm === 'All' ||
-      (student.term || 'Term 1') === filters.selectedTerm
+      (student.term || DEFAULT_TERM) === filters.selectedTerm
 
     return (
       matchesGrade &&

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Papa from 'papaparse'
 import sampleStudents from '../data/students'
 import {
+  DEFAULT_TERM,
   defaultGrades,
   defaultSubjects,
   defaultTerms,
@@ -17,6 +18,7 @@ import {
   normalizeKey,
   normalizeStudentRecord,
 } from '../utils/studentData'
+import { createId } from '../utils/ids'
 
 function DataManager({
   students,
@@ -30,11 +32,13 @@ function DataManager({
   terms,
   setTerms,
 }) {
+  const [message, setMessage] = useState(null)
+
   const getDefaultFormState = () => ({
     name: '',
     gender: 'Female',
     grade: grades[0] || 'Grade 7',
-    term: terms[0] || 'Term 1',
+    term: terms[0] || DEFAULT_TERM,
     scores: createEmptyScores(subjects),
   })
 
@@ -43,6 +47,11 @@ function DataManager({
   const [newSubject, setNewSubject] = useState('')
   const [newGrade, setNewGrade] = useState('')
   const [newTerm, setNewTerm] = useState('')
+
+  const detectedSubjectSeed = useMemo(
+    () => (uploadMode === 'append' ? subjects : []),
+    [subjects, uploadMode]
+  )
 
   useEffect(() => {
     if (editingStudent) {
@@ -55,7 +64,7 @@ function DataManager({
         name: editingStudent.name,
         gender: editingStudent.gender,
         grade: editingStudent.grade,
-        term: editingStudent.term || (terms[0] || 'Term 1'),
+        term: editingStudent.term || (terms[0] || DEFAULT_TERM),
         scores: mergedScores,
       })
       return
@@ -65,7 +74,7 @@ function DataManager({
       name: previous.name,
       gender: previous.gender || 'Female',
       grade: grades.includes(previous.grade) ? previous.grade : grades[0] || 'Grade 7',
-      term: terms.includes(previous.term) ? previous.term : terms[0] || 'Term 1',
+      term: terms.includes(previous.term) ? previous.term : terms[0] || DEFAULT_TERM,
       scores: subjects.reduce((accumulator, subject) => {
         accumulator[subject] = previous.scores?.[subject] ?? ''
         return accumulator
@@ -75,7 +84,10 @@ function DataManager({
 
   const applyUploadData = (parsedStudents, detectedSubjects) => {
     if (parsedStudents.length === 0) {
-      alert('No valid student records were found.')
+      setMessage({
+        type: 'error',
+        text: 'No valid student records were found in the uploaded file.',
+      })
       return
     }
 
@@ -89,10 +101,12 @@ function DataManager({
 
     if (uploadMode === 'append') {
       setStudents((previous) => [...previous, ...parsedStudents])
+      setMessage({ type: 'success', text: `Appended ${parsedStudents.length} record(s).` })
       return
     }
 
     setStudents(parsedStudents)
+    setMessage({ type: 'success', text: `Loaded ${parsedStudents.length} record(s).` })
   }
 
   const handleCsvUpload = (event) => {
@@ -103,17 +117,15 @@ function DataManager({
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const detectedSubjects = detectSubjectsFromRows(results.data, subjects)
+        const detectedSubjects = detectSubjectsFromRows(results.data, detectedSubjectSeed)
         const parsedStudents = results.data
-          .map((row, index) =>
-            normalizeStudentRecord(row, detectedSubjects, terms, index)
-          )
+          .map((row) => normalizeStudentRecord(row, detectedSubjects, terms))
           .filter(isValidStudentRecord)
 
         applyUploadData(parsedStudents, detectedSubjects)
       },
       error: () => {
-        alert('Failed to parse CSV file.')
+        setMessage({ type: 'error', text: 'Failed to parse CSV file.' })
       },
     })
 
@@ -131,16 +143,14 @@ function DataManager({
       const firstSheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[firstSheetName]
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
-      const detectedSubjects = detectSubjectsFromRows(jsonData, subjects)
+      const detectedSubjects = detectSubjectsFromRows(jsonData, detectedSubjectSeed)
       const parsedStudents = jsonData
-        .map((row, index) =>
-          normalizeStudentRecord(row, detectedSubjects, terms, index)
-        )
+        .map((row) => normalizeStudentRecord(row, detectedSubjects, terms))
         .filter(isValidStudentRecord)
 
       applyUploadData(parsedStudents, detectedSubjects)
     } catch {
-      alert('Failed to parse Excel file.')
+      setMessage({ type: 'error', text: 'Failed to parse Excel file.' })
     }
 
     event.target.value = ''
@@ -178,7 +188,7 @@ function DataManager({
     )
 
     const studentRecord = {
-      id: editingStudent ? editingStudent.id : Date.now(),
+      id: editingStudent ? editingStudent.id : createId(),
       name: formData.name.trim(),
       gender: formData.gender,
       grade: formData.grade,
@@ -192,7 +202,10 @@ function DataManager({
       !studentRecord.term ||
       hasInvalidScore
     ) {
-      alert('Please enter a valid name, grade, term, and scores between 0 and 100.')
+      setMessage({
+        type: 'error',
+        text: 'Enter a valid name, grade, term, and scores between 0 and 100.',
+      })
       return
     }
 
@@ -210,6 +223,7 @@ function DataManager({
     setGrades((previous) => [...new Set([...previous, studentRecord.grade])])
     setTerms((previous) => [...new Set([...previous, studentRecord.term])])
     setFormData(getDefaultFormState())
+    setMessage({ type: 'success', text: editingStudent ? 'Student updated.' : 'Student added.' })
   }
 
   const handleCancelEdit = () => {
@@ -254,7 +268,7 @@ function DataManager({
   const resetToSampleData = () => {
     const resetStudents = sampleStudents.map((student) => ({
       ...student,
-      term: student.term || 'Term 1',
+      term: student.term || DEFAULT_TERM,
     }))
 
     setStudents(resetStudents)
@@ -262,11 +276,12 @@ function DataManager({
     setGrades(defaultGrades)
     setTerms(defaultTerms)
     setEditingStudent(null)
+    setMessage({ type: 'success', text: 'Reset to sample data.' })
   }
 
   const exportToCsv = () => {
     if (students.length === 0) {
-      alert('There is no data to export.')
+      setMessage({ type: 'error', text: 'There is no data to export.' })
       return
     }
 
@@ -280,7 +295,7 @@ function DataManager({
 
   const exportToExcel = async () => {
     if (students.length === 0) {
-      alert('There is no data to export.')
+      setMessage({ type: 'error', text: 'There is no data to export.' })
       return
     }
 
@@ -311,6 +326,15 @@ function DataManager({
           system with more subjects, grades, and terms.
         </p>
       </div>
+
+      {message && (
+        <div
+          className={`manager-message manager-message--${message.type}`}
+          role={message.type === 'error' ? 'alert' : 'status'}
+        >
+          {message.text}
+        </div>
+      )}
 
       <div className="manager-actions">
         <label className="upload-mode">

@@ -9,6 +9,8 @@ export const defaultGrades = ['Grade 7', 'Grade 8', 'Grade 9']
 
 export const defaultTerms = ['Term 1', 'Term 2', 'Term 3']
 
+export const DEFAULT_TERM = 'Term 1'
+
 export const formatSubjectLabel = (subject) => {
   const labels = {
     english: 'English',

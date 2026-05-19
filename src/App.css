@@ -82,6 +82,28 @@
   padding: 1.25rem;
 }
 
+.manager-message {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  font-weight: 700;
+  border: 1px solid rgba(191, 219, 254, 0.7);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1e3a8a;
+}
+
+.manager-message--error {
+  border-color: rgba(252, 165, 165, 0.85);
+  background: rgba(254, 226, 226, 0.78);
+  color: #991b1b;
+}
+
+.manager-message--success {
+  border-color: rgba(134, 239, 172, 0.85);
+  background: rgba(220, 252, 231, 0.78);
+  color: #065f46;
+}
+
 .data-manager-card h2,
 .table-card h2 {
   margin-bottom: 0.4rem;

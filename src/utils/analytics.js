@@ -1,3 +1,5 @@
+import { DEFAULT_TERM } from '../data/config.js'
+
 export function getStudentAverage(student, subjects) {
   if (!subjects.length) return 0
 
@@ -52,12 +54,12 @@ export function getTermPerformance(students, subjects, terms = []) {
   const orderedTerms =
     terms.length > 0
       ? terms
-      : [...new Set(students.map((student) => student.term || 'Term 1'))]
+      : [...new Set(students.map((student) => student.term || DEFAULT_TERM))]
 
   return orderedTerms
     .map((term) => {
       const termStudents = students.filter(
-        (student) => (student.term || 'Term 1') === term
+        (student) => (student.term || DEFAULT_TERM) === term
       )
 
       if (!termStudents.length) return null
@@ -87,7 +89,7 @@ export function getImprovementLeaders(students, subjects, terms = []) {
   const orderedTerms =
     terms.length > 0
       ? terms
-      : [...new Set(students.map((student) => student.term || 'Term 1'))]
+      : [...new Set(students.map((student) => student.term || DEFAULT_TERM))]
 
   const termOrder = new Map(orderedTerms.map((term, index) => [term, index]))
   const groupedStudents = new Map()
@@ -96,7 +98,7 @@ export function getImprovementLeaders(students, subjects, terms = []) {
     const key = `${student.name.toLowerCase()}::${student.grade}`
     const record = {
       average: getStudentAverage(student, subjects),
-      endTerm: student.term || 'Term 1',
+      endTerm: student.term || DEFAULT_TERM,
       grade: student.grade,
       name: student.name,
     }

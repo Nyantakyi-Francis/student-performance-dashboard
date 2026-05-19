@@ -1,10 +1,14 @@
-import { useEffect } from 'react'
-import { formatSubjectLabel } from '../data/config'
+import { useEffect, useRef } from 'react'
+import { DEFAULT_TERM, formatSubjectLabel } from '../data/config'
 import { getStudentAverage, getRiskLevel } from '../utils/analytics'
 
 function StudentDetailsModal({ student, subjects, onClose }) {
+  const closeButtonRef = useRef(null)
+
   useEffect(() => {
     if (!student) return undefined
+
+    const previouslyFocused = document.activeElement
 
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
@@ -16,9 +20,12 @@ function StudentDetailsModal({ student, subjects, onClose }) {
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleEscape)
 
+    closeButtonRef.current?.focus?.()
+
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleEscape)
+      previouslyFocused?.focus?.()
     }
   }, [onClose, student])
 
@@ -40,7 +47,7 @@ function StudentDetailsModal({ student, subjects, onClose }) {
           <div>
             <h2 id="student-modal-title">{student.name}</h2>
             <p>
-              {student.gender} / {student.grade} / {student.term || 'Term 1'}
+              {student.gender} / {student.grade} / {student.term || DEFAULT_TERM}
             </p>
           </div>
 
@@ -49,6 +56,7 @@ function StudentDetailsModal({ student, subjects, onClose }) {
             className="modal-close-button"
             aria-label="Close student details"
             onClick={onClose}
+            ref={closeButtonRef}
           >
             x
           </button>

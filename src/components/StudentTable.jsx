@@ -1,4 +1,5 @@
-import { formatSubjectLabel } from '../data/config'
+import { useMemo } from 'react'
+import { DEFAULT_TERM, formatSubjectLabel } from '../data/config'
 import { getStudentAverage, getRiskLevel } from '../utils/analytics'
 
 function StudentTable({
@@ -8,6 +9,16 @@ function StudentTable({
   onEditStudent,
   onViewStudent,
 }) {
+  const rows = useMemo(
+    () =>
+      students.map((student) => {
+        const average = getStudentAverage(student, subjects)
+        const riskLevel = getRiskLevel(average)
+        return { student, average, riskLevel }
+      }),
+    [students, subjects]
+  )
+
   return (
     <section className="table-card">
       <div className="section-heading">
@@ -35,16 +46,13 @@ function StudentTable({
             </thead>
 
             <tbody>
-              {students.map((student) => {
-                const average = getStudentAverage(student, subjects)
-                const riskLevel = getRiskLevel(average)
-
+              {rows.map(({ student, average, riskLevel }) => {
                 return (
                   <tr key={student.id}>
                     <td>{student.name}</td>
                     <td>{student.gender}</td>
                     <td>{student.grade}</td>
-                    <td>{student.term || 'Term 1'}</td>
+                    <td>{student.term || DEFAULT_TERM}</td>
 
                     {subjects.map((subject) => (
                       <td key={subject}>{student.scores?.[subject] ?? 0}</td>
