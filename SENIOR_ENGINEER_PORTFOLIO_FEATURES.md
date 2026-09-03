@@ -10,9 +10,9 @@ This document lists potential additions. The priorities identify what should be 
 
 ## Current implementation status
 
-Last updated: 2026-08-30
+Last updated: 2026-09-03
 
-Work on the senior-engineer portfolio version has started and is intended to continue in a later session.
+Work on the senior-engineer portfolio version has started. The repository now contains the first backend/API slice and supporting architecture documents, but the database-backed runtime is not configured yet.
 
 ### Completed
 
@@ -26,6 +26,10 @@ Work on the senior-engineer portfolio version has started and is intended to con
 - Generated the first SQL migration with constraints and foreign-key indexes.
 - Added a database connection adapter and migration command.
 - Added a health endpoint and the initial validated, cursor-paginated student endpoint.
+- Added an idempotent synthetic-data seed script for the demo school, grade levels, classes, terms, subjects, students, assessments, and scores.
+- Added a validated `GET /api/v1/dashboard-data` endpoint that reshapes persisted score records into the current dashboard format.
+- Added a frontend API adapter for loading dashboard data from `GET /api/v1/dashboard-data`, with browser sample data as the fallback when the API is unavailable.
+- Added API status messaging that describes whether data came from the API, returned empty, or fell back to browser sample data.
 - Added API configuration and HTTP-contract tests.
 - Confirmed that frontend tests, API tests, linting, type checking, the API build, and the frontend build pass.
 
@@ -33,14 +37,14 @@ Work on the senior-engineer portfolio version has started and is intended to con
 
 Supabase has been selected as the intended managed PostgreSQL provider. It fits the existing PostgreSQL and Drizzle design, so adopting it will not require replacing the Fastify API.
 
-No Supabase work has been completed yet:
+Supabase remains selected but not configured:
 
 - no Supabase project has been created or linked;
 - no Supabase credentials or connection strings have been added;
 - the generated migration has not been applied to a live database;
 - an idempotent synthetic seed script exists, but it has not been run against Supabase or another live PostgreSQL database;
 - the student and dashboard-data endpoints have not been tested against PostgreSQL;
-- the React dashboard can call the API, but it still falls back to browser-managed sample data when the API is unavailable.
+- the React dashboard can call the API, but the deployed/demo frontend still depends on browser-managed sample data unless an API and database are running behind it.
 
 This is the deliberate stopping point. Supabase setup and database integration are deferred until work resumes.
 
@@ -53,9 +57,10 @@ Continue from this sequence:
 3. Apply `apps/api/drizzle/0000_chunky_lockheed.sql` through the existing migration command.
 4. Review the idempotent synthetic-data seed and adjust it if the demo dataset changes.
 5. Run the seed against Supabase.
-6. Add an integration test for `GET /api/v1/students` against a test database.
+6. Add integration tests for `GET /api/v1/students` and `GET /api/v1/dashboard-data` against a test database.
 7. Configure the running API to use the Supabase transaction-pooler connection string.
-8. Connect the React dashboard to the API and add loading, empty, and safe error states.
+8. Point the React dashboard at the deployed API and verify loading, empty, fallback, and safe error states in a browser.
+9. Update the README only after the live database-backed path is verified.
 
 Do not place the database password or full connection string in the repository, frontend environment variables, screenshots, documentation, or chat history.
 

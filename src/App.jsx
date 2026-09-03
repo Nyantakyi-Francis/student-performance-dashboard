@@ -12,7 +12,7 @@ import InsightsPanel from './components/InsightsPanel'
 import StudentDetailsModal from './components/StudentDetailsModal'
 import TermTrendChart from './components/TermTrendChart'
 import { filterStudents } from './utils/filters'
-import { fetchDashboardData } from './api/dashboard'
+import { fetchDashboardData, hasConfiguredApiBaseUrl } from './api/dashboard'
 
 const DASHBOARD_STORAGE_KEY = 'student-performance-dashboard:v2'
 
@@ -82,12 +82,20 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
   const [viewingStudent, setViewingStudent] = useState(null)
-  const [remoteStatus, setRemoteStatus] = useState('loading')
+  const [remoteStatus, setRemoteStatus] = useState(
+    hasConfiguredApiBaseUrl || import.meta.env.DEV ? 'loading' : 'empty'
+  )
   const [remoteMessage, setRemoteMessage] = useState(
-    'Loading seeded records from the API.'
+    hasConfiguredApiBaseUrl || import.meta.env.DEV
+      ? 'Loading seeded records from the API.'
+      : 'Using the browser sample dataset.'
   )
 
   useEffect(() => {
+    if (!hasConfiguredApiBaseUrl && !import.meta.env.DEV) {
+      return
+    }
+
     let isCurrent = true
 
     async function loadRemoteDashboardData() {
