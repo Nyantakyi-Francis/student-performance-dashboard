@@ -64,6 +64,35 @@
   padding-bottom: 2rem;
 }
 
+.remote-status {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e3a8a;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+.remote-status--success {
+  border-color: rgba(134, 239, 172, 0.85);
+  background: rgba(220, 252, 231, 0.86);
+  color: #065f46;
+}
+
+.remote-status--empty {
+  border-color: rgba(253, 186, 116, 0.85);
+  background: rgba(255, 237, 213, 0.86);
+  color: #9a3412;
+}
+
+.remote-status--error {
+  border-color: rgba(252, 165, 165, 0.85);
+  background: rgba(254, 226, 226, 0.86);
+  color: #991b1b;
+}
+
 .data-manager,
 .filter-bar,
 .chart-card,

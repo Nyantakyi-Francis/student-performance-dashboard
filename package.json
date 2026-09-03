@@ -4,12 +4,20 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "api:build": "npm run build --workspace @student-dashboard/api",
+    "api:dev": "npm run dev --workspace @student-dashboard/api",
+    "api:test": "npm run test --workspace @student-dashboard/api",
+    "api:typecheck": "npm run typecheck --workspace @student-dashboard/api",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/utils/analytics.test.js"
+    "test": "node --test src/utils/analytics.test.js && npm run api:test",
+    "typecheck": "npm run api:typecheck"
   },
+  "workspaces": [
+    "apps/*"
+  ],
   "dependencies": {
     "chart.js": "^4.5.1",
     "papaparse": "^5.5.3",

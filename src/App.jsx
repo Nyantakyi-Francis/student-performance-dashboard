@@ -12,6 +12,7 @@ import InsightsPanel from './components/InsightsPanel'
 import StudentDetailsModal from './components/StudentDetailsModal'
 import TermTrendChart from './components/TermTrendChart'
 import { filterStudents } from './utils/filters'
+import { fetchDashboardData } from './api/dashboard'
 
 const DASHBOARD_STORAGE_KEY = 'student-performance-dashboard:v2'
 
@@ -81,6 +82,45 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
   const [viewingStudent, setViewingStudent] = useState(null)
+  const [remoteStatus, setRemoteStatus] = useState('loading')
+  const [remoteMessage, setRemoteMessage] = useState(
+    'Loading seeded records from the API.'
+  )
+
+  useEffect(() => {
+    let isCurrent = true
+
+    async function loadRemoteDashboardData() {
+      try {
+        const response = await fetchDashboardData()
+        if (!isCurrent) return
+
+        setStudents(response.data.students)
+        setSubjects(response.data.subjects)
+        setGrades(response.data.grades)
+        setTerms(response.data.terms)
+        setRemoteStatus(response.data.students.length > 0 ? 'success' : 'empty')
+        setRemoteMessage(
+          response.data.students.length > 0
+            ? 'Loaded seeded records from the API.'
+            : 'The API responded, but no student records were returned.'
+        )
+      } catch {
+        if (!isCurrent) return
+
+        setRemoteStatus('error')
+        setRemoteMessage(
+          'Could not reach the API. Showing the browser sample dataset.'
+        )
+      }
+    }
+
+    loadRemoteDashboardData()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -177,6 +217,13 @@ function App() {
       </header>
 
       <main className="main-content">
+        <div
+          className={`remote-status remote-status--${remoteStatus}`}
+          role={remoteStatus === 'error' ? 'alert' : 'status'}
+        >
+          {remoteMessage}
+        </div>
+
         <DataManager
           students={students}
           setStudents={setStudents}
