@@ -15,4 +15,10 @@ describe('parseConfig', () => {
       'Invalid API configuration'
     )
   })
+
+  it('uses provider PORT when API_PORT is not set', () => {
+    const config = parseConfig({ NODE_ENV: 'production', PORT: '10000' })
+
+    expect(config.API_PORT).toBe(10000)
+  })
 })

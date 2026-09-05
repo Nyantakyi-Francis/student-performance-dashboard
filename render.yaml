@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: student-dashboard-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run api:build
+    startCommand: npm run start --workspace @student-dashboard/api
+    healthCheckPath: /health
+    envVars:
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: NODE_ENV
+        value: production
