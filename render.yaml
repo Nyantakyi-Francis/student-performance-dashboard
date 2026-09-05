@@ -3,7 +3,7 @@ services:
     name: student-dashboard-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run api:build
+    buildCommand: npm ci --include=dev && npm run api:build
     startCommand: npm run start --workspace @student-dashboard/api
     healthCheckPath: /health
     envVars:
