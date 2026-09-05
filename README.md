@@ -53,6 +53,8 @@ This project goes beyond a static chart demo. It supports a realistic school wor
 - react-chartjs-2
 - Papa Parse
 - XLSX
+- Fastify API workspace
+- PostgreSQL schema and migrations with Drizzle
 - ESLint
 
 ## Project Structure
@@ -76,8 +78,21 @@ npm run dev
 ```bash
 npm run lint
 npm run test
+npm run typecheck
 npm run build
 ```
+
+## Backend Status
+
+The repository includes an API workspace under `apps/api` with a read-only PostgreSQL path for synthetic demo data. Configure `DATABASE_URL` outside Git, then run:
+
+```bash
+npm run supabase:push
+npm run db:seed --workspace @student-dashboard/api
+npm run api:smoke
+```
+
+The public portfolio demo should remain synthetic-only. Do not upload real student data until authentication, authorization, tenant isolation, audit logging, and privacy controls are implemented and tested.
 
 ## Sample Data Format
 
@@ -103,5 +118,5 @@ This dashboard is designed as if it were being handed to a school administrator:
 
 - role-based access with teacher/admin views
 - PDF reporting for class summaries
-- cloud sync with Firebase or Supabase
+- deployed PostgreSQL-backed API using synthetic data
 - richer testing around upload and filtering flows

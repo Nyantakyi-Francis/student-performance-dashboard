@@ -6,12 +6,15 @@
   "scripts": {
     "api:build": "npm run build --workspace @student-dashboard/api",
     "api:dev": "npm run dev --workspace @student-dashboard/api",
+    "api:smoke": "npm run db:smoke --workspace @student-dashboard/api",
     "api:test": "npm run test --workspace @student-dashboard/api",
     "api:typecheck": "npm run typecheck --workspace @student-dashboard/api",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "supabase:dry-run": "supabase db push --linked --dry-run",
+    "supabase:push": "supabase db push --linked",
     "test": "node --test src/utils/analytics.test.js && npm run api:test",
     "typecheck": "npm run api:typecheck"
   },
