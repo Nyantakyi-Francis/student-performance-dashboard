@@ -93,6 +93,21 @@
   color: #991b1b;
 }
 
+.demo-notice {
+  margin-bottom: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(251, 191, 36, 0.9);
+  border-radius: 16px;
+  background: rgba(254, 249, 195, 0.9);
+  color: #713f12;
+  line-height: 1.55;
+  box-shadow: var(--shadow);
+}
+
+.demo-notice strong {
+  color: #854d0e;
+}
+
 .data-manager,
 .filter-bar,
 .chart-card,

@@ -232,6 +232,12 @@ function App() {
           {remoteMessage}
         </div>
 
+        <div className="demo-notice" role="note">
+          <strong>Synthetic demo only.</strong> Do not upload or enter real
+          student data. Authentication, authorization, tenant isolation, and
+          audit controls are not implemented yet.
+        </div>
+
         <DataManager
           students={students}
           setStudents={setStudents}
