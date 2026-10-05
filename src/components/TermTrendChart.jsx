@@ -1,6 +1,7 @@
 import {
   Chart as ChartJS,
   CategoryScale,
+  Filler,
   Legend,
   LinearScale,
   LineElement,
@@ -19,6 +20,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
+  Filler,
   Legend
 )
 
