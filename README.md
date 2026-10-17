@@ -82,27 +82,35 @@ npm run typecheck
 npm run build
 ```
 
-## Backend Status
+## Database and access status
 
-The repository includes an API workspace under `apps/api` with a read-only PostgreSQL path for synthetic demo data. Configure `DATABASE_URL` outside Git, then run:
+The dashboard has two separate modes:
 
-```bash
-npm run supabase:push
-npm run db:seed --workspace @student-dashboard/api
-npm run api:smoke
-```
+- **Browser sandbox:** editable synthetic data persisted in this browser.
+- **Database view:** authenticated, read-only API records kept out of browser storage. API failures show an error and retry action.
 
-The public portfolio demo should remain synthetic-only. Do not upload real student data until authentication, authorization, tenant isolation, audit logging, and privacy controls are implemented and tested.
+Administrators can read their school's records and manage teacher class/subject assignments. Teachers can read only assigned class rosters and subject results. The API uses opaque cookie sessions, scoped queries, CSRF request checks, rate limits, and audit events for assignment/session changes. All demo data must remain synthetic.
+
+See [local setup and checks](docs/local-development.md), [API reference](docs/api.md), and [threat model](docs/threat-model.md). GitHub Actions runs unit, PostgreSQL integration, build, and desktop/mobile browser checks.
 
 ## Sample Data Format
 
 Your CSV or Excel file should include:
 
+- `studentId` (reuse the same ID across terms; generated separately for each row when omitted)
 - `name`
 - `gender`
 - `grade`
 - `term`
 - one column for each subject, such as `English`, `Mathematics`, `Science`, and `Social Studies`
+
+## Scores and student identity
+
+Scores must be finite numbers from 0 to 100, or blank. Blank cells are stored as missing and exported as blank cells. Zero is a recorded score. Invalid CSV or Excel uploads are rejected in full with row-level errors; the current dataset stays unchanged. A student ID can have only one record per term.
+
+Student averages use recorded scores only. Subject averages show the mean of recorded scores for that subject; the class average weights each subject with scores equally. Term and grade averages weight each record with scores equally. Records with no scores show "No scores" and are excluded from pass/fail, risk, and improvement calculations. Adding a subject starts its scores as missing.
+
+Use the same `studentId` for a student's records across terms. Names and grades do not determine identity. The manual entry form accepts an existing student ID or generates a new one; exports preserve that ID. Legacy browser records without a student ID use their existing record ID, so they are not automatically linked across terms. Reimport them with explicit student IDs to link them. Previously saved zeroes cannot be distinguished from blanks that older versions converted to zero.
 
 ## Product Thinking Behind It
 
@@ -116,7 +124,7 @@ This dashboard is designed as if it were being handed to a school administrator:
 
 ## Next Improvements
 
-- role-based access with teacher/admin views
+- account invitations and password recovery
 - PDF reporting for class summaries
-- deployed PostgreSQL-backed API using synthetic data
-- richer testing around upload and filtering flows
+- verify the authenticated API behind a same-origin production proxy
+- server-side score entry and result publication

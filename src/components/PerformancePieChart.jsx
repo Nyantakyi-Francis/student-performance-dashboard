@@ -17,7 +17,7 @@ function PerformancePieChart({ students, subjects }) {
       return { passCount: 0, failCount: 0 }
     }
 
-    const averages = students.map((student) => getStudentAverage(student, subjects))
+    const averages = students.map((student) => getStudentAverage(student, subjects)).filter((average) => average !== null)
     return {
       passCount: averages.filter((avg) => avg >= 50).length,
       failCount: averages.filter((avg) => avg < 50).length,
@@ -60,7 +60,7 @@ function PerformancePieChart({ students, subjects }) {
   return (
     <div className="chart-card">
       <div className="pie-chart-inner">
-        {students.length === 0 || subjects.length === 0 ? (
+        {passCount + failCount === 0 ? (
           <h2>No data available for this filter</h2>
         ) : (
           <Pie data={data} options={options} />

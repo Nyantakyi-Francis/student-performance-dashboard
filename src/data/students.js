@@ -204,6 +204,7 @@ const studentBlueprints = [
 const students = studentBlueprints.flatMap((student, studentIndex) => {
   return Object.entries(student.terms).map(([term, scores], termIndex) => ({
     id: studentIndex * 10 + termIndex + 1,
+    studentId: `sample-student-${studentIndex + 1}`,
     name: student.name,
     gender: student.gender,
     grade: student.grade,

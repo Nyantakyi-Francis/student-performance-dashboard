@@ -1,16 +1,21 @@
 import { DEFAULT_TERM } from '../data/config.js'
+import { parseScore, isRecordedScore } from './scores.js'
+
+function mean(values) {
+  const recorded = values.filter(isRecordedScore)
+  return recorded.length ? recorded.reduce((sum, value) => sum + value, 0) / recorded.length : null
+}
+
+export function getStudentIdentity(student) {
+  return String(student.studentId ?? student.id)
+}
 
 export function getStudentAverage(student, subjects) {
-  if (!subjects.length) return 0
-
-  const total = subjects.reduce((sum, subject) => {
-    return sum + Number(student.scores?.[subject] ?? 0)
-  }, 0)
-
-  return total / subjects.length
+  return mean(subjects.map((subject) => parseScore(student.scores?.[subject])))
 }
 
 export function getRiskLevel(average) {
+  if (average == null) return 'No scores'
   if (average >= 80) return 'Excellent'
   if (average >= 60) return 'Good'
   if (average >= 50) return 'Average'
@@ -19,7 +24,7 @@ export function getRiskLevel(average) {
 
 export function getUniqueStudentCount(students) {
   return new Set(
-    students.map((student) => `${student.name.toLowerCase()}::${student.grade}`)
+    students.map(getStudentIdentity)
   ).size
 }
 
@@ -27,25 +32,14 @@ export function getSubjectAverages(students, subjects) {
   if (!students.length || !subjects.length) return []
 
   return subjects.map((subject) => {
-    const total = students.reduce((sum, student) => {
-      return sum + Number(student.scores?.[subject] ?? 0)
-    }, 0)
-
-    return {
-      subject,
-      average: total / students.length,
-    }
+    const scores = students.map((student) => parseScore(student.scores?.[subject]))
+    return { subject, average: mean(scores), count: scores.filter(isRecordedScore).length }
   })
 }
 
 export function getClassAverage(students, subjects) {
-  const subjectAverages = getSubjectAverages(students, subjects)
-  if (!subjectAverages.length) return 0
-
-  return (
-    subjectAverages.reduce((sum, subject) => sum + subject.average, 0) /
-    subjectAverages.length
-  )
+  // Retain equal weighting per subject, excluding subjects with no recorded scores.
+  return mean(getSubjectAverages(students, subjects).map((subject) => subject.average))
 }
 
 export function getTermPerformance(students, subjects, terms = []) {
@@ -59,18 +53,14 @@ export function getTermPerformance(students, subjects, terms = []) {
   return orderedTerms
     .map((term) => {
       const termStudents = students.filter(
-        (student) => (student.term || DEFAULT_TERM) === term
+        (student) => (student.term || DEFAULT_TERM) === term && getStudentAverage(student, subjects) !== null
       )
 
       if (!termStudents.length) return null
 
       return {
         term,
-        average:
-          termStudents.reduce(
-            (sum, student) => sum + getStudentAverage(student, subjects),
-            0
-          ) / termStudents.length,
+        average: mean(termStudents.map((student) => getStudentAverage(student, subjects))),
         count: termStudents.length,
       }
     })
@@ -95,7 +85,8 @@ export function getImprovementLeaders(students, subjects, terms = []) {
   const groupedStudents = new Map()
 
   students.forEach((student) => {
-    const key = `${student.name.toLowerCase()}::${student.grade}`
+    const key = getStudentIdentity(student)
+    if (getStudentAverage(student, subjects) === null) return
     const record = {
       average: getStudentAverage(student, subjects),
       endTerm: student.term || DEFAULT_TERM,
@@ -120,6 +111,7 @@ export function getImprovementLeaders(students, subjects, terms = []) {
       })
 
       if (sortedRecords.length < 2) return null
+      if (new Set(sortedRecords.map((record) => record.endTerm)).size !== sortedRecords.length) return null
 
       const firstRecord = sortedRecords[0]
       const lastRecord = sortedRecords[sortedRecords.length - 1]

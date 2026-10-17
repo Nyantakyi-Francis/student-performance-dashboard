@@ -1,3 +1,4 @@
+import { formatAverage, parseScore } from '../utils/scores'
 import { useEffect, useRef } from 'react'
 import { DEFAULT_TERM, formatSubjectLabel } from '../data/config'
 import { getStudentAverage, getRiskLevel } from '../utils/analytics'
@@ -47,7 +48,7 @@ function StudentDetailsModal({ student, subjects, onClose }) {
           <div>
             <h2 id="student-modal-title">{student.name}</h2>
             <p>
-              {student.gender} / {student.grade} / {student.term || DEFAULT_TERM}
+              ID: {student.studentId ?? student.id} / {student.gender} / {student.grade} / {student.term || DEFAULT_TERM}
             </p>
           </div>
 
@@ -65,7 +66,7 @@ function StudentDetailsModal({ student, subjects, onClose }) {
         <div className="student-summary-grid">
           <div className="student-summary-card">
             <h3>Average</h3>
-            <p>{average.toFixed(1)}%</p>
+            <p>{formatAverage(average)}</p>
           </div>
 
           <div className="student-summary-card">
@@ -89,7 +90,7 @@ function StudentDetailsModal({ student, subjects, onClose }) {
             {subjects.map((subject) => (
               <div className="modal-score-item" key={subject}>
                 <span>{formatSubjectLabel(subject)}</span>
-                <strong>{student.scores?.[subject] ?? 0}</strong>
+                <strong>{parseScore(student.scores?.[subject]) ?? 'Missing'}</strong>
               </div>
             ))}
           </div>

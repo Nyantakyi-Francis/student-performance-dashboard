@@ -84,7 +84,7 @@ function SubjectBarChart({ students, subjects }) {
   return (
     <div className="chart-card">
       <div className="chart-inner">
-        {students.length === 0 || subjects.length === 0 ? (
+        {subjectAverages.every((item) => item.average === null) ? (
           <h2>No data available for this filter</h2>
         ) : (
           <Bar data={data} options={options} />

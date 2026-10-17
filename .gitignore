@@ -28,3 +28,8 @@ dist-ssr
 
 NEXT_STEPS.txt
 SENIOR_ENGINEER_PORTFOLIO_FEATURES.md
+Senior engineer portfolio feature roadmap.md
+
+# Browser test artifacts
+test-results/
+playwright-report/

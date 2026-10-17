@@ -1,0 +1,52 @@
+name: Checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dashboard
+          POSTGRES_PASSWORD: synthetic-ci-password
+          POSTGRES_DB: student_dashboard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://dashboard:synthetic-ci-password@127.0.0.1:5432/student_dashboard_test
+      TEST_DATABASE_URL: postgres://dashboard:synthetic-ci-password@127.0.0.1:5432/student_dashboard_test
+      DEMO_ADMIN_PASSWORD: synthetic-ci-admin-password
+      DEMO_TEACHER_PASSWORD: synthetic-ci-teacher-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run api:build
+      - run: npm run test:integration
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run db:seed:accounts
+      - run: npm run api:smoke
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failures
+          path: test-results/

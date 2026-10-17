@@ -1,13 +1,16 @@
 import { DEFAULT_TERM, formatSubjectLabel } from '../data/config.js'
-import { createId } from './ids'
+import { createId } from './ids.js'
 
-const RESERVED_FIELDS = ['id', 'name', 'gender', 'grade', 'term']
+import { parseScore, isRecordedScore } from './scores.js'
+
+const RESERVED_FIELDS = ['id', 'studentId', 'name', 'gender', 'grade', 'term']
 
 export function normalizeKey(value) {
   const clean = String(value || '').trim()
   if (!clean) return ''
 
   return clean
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/\s+/g, ' ')
     .replace(/[^a-zA-Z0-9 ]/g, '')
     .split(' ')
@@ -60,12 +63,12 @@ export function normalizeStudentRecord(row, allSubjects, termOptions = []) {
 
   allSubjects.forEach((subject) => {
     const rawValue = getRowValueByNormalizedKey(row, subject)
-    const numericValue = Number(rawValue ?? 0)
-    scoreObject[subject] = Number.isNaN(numericValue) ? 0 : numericValue
+    scoreObject[subject] = parseScore(rawValue)
   })
 
   return {
     id: createId(),
+    studentId: String(getRowValueByNormalizedKey(row, 'studentId') ?? '').trim() || createId(),
     name: String(getRowValueByNormalizedKey(row, 'name') ?? '').trim(),
     gender: String(getRowValueByNormalizedKey(row, 'gender') ?? '').trim(),
     grade: String(getRowValueByNormalizedKey(row, 'grade') ?? '').trim(),
@@ -84,13 +87,38 @@ export function isValidStudentRecord(student) {
     student.gender &&
     student.grade &&
     student.term &&
-    scoreValues.every((score) => !Number.isNaN(score))
+    scoreValues.every((score) => score === null || isRecordedScore(score))
   )
+}
+
+// Validate the entire file before the caller changes the dataset.
+export function validateImportRows(rows, subjects, terms = []) {
+  const students = []
+  const errors = []
+  const seen = new Set()
+  rows.forEach((row, index) => {
+    const student = normalizeStudentRecord(row, subjects, terms)
+    const rowNumber = row.__rowNum__ == null ? index + 2 : row.__rowNum__ + 1
+    for (const field of ['name', 'gender', 'grade']) {
+      if (!student[field]) errors.push(`Row ${rowNumber}: ${field} is required.`)
+    }
+    for (const subject of subjects) {
+      if (student.scores[subject] !== null && !isRecordedScore(student.scores[subject])) {
+        errors.push(`Row ${rowNumber}: ${formatSubjectLabel(subject)} must be a number between 0 and 100, or blank.`)
+      }
+    }
+    const key = JSON.stringify([student.studentId, student.term])
+    if (seen.has(key)) errors.push(`Row ${rowNumber}: duplicate student ID and term.`)
+    seen.add(key)
+    students.push(student)
+  })
+  return { students: errors.length ? [] : students, errors }
 }
 
 export function buildStudentExportRows(students, subjects) {
   return students.map((student) => {
     const row = {
+      studentId: student.studentId ?? student.id,
       name: student.name,
       gender: student.gender,
       grade: student.grade,
@@ -98,7 +126,7 @@ export function buildStudentExportRows(students, subjects) {
     }
 
     subjects.forEach((subject) => {
-      row[formatSubjectLabel(subject)] = Number(student.scores?.[subject] ?? 0)
+      row[formatSubjectLabel(subject)] = parseScore(student.scores?.[subject]) ?? ''
     })
 
     return row
@@ -107,6 +135,7 @@ export function buildStudentExportRows(students, subjects) {
 
 export function buildTemplateRows(subjects, grades = [], terms = []) {
   const templateRow = {
+    studentId: 'demo-student-001',
     name: 'Ama Mensah',
     gender: 'Female',
     grade: grades[0] || 'Grade 7',

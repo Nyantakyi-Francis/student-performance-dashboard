@@ -15,8 +15,13 @@
     "preview": "vite preview",
     "supabase:dry-run": "supabase db push --linked --dry-run",
     "supabase:push": "supabase db push --linked",
-    "test": "node --test src/utils/analytics.test.js && npm run api:test",
-    "typecheck": "npm run api:typecheck"
+    "test": "node --test src/utils/*.test.js src/api/*.test.js && npm run api:test",
+    "typecheck": "npm run api:typecheck",
+    "test:e2e": "playwright test",
+    "test:integration": "npm run test:integration --workspace @student-dashboard/api",
+    "db:migrate": "npm run db:migrate --workspace @student-dashboard/api",
+    "db:seed": "npm run db:seed --workspace @student-dashboard/api",
+    "db:seed:accounts": "npm run db:seed:accounts --workspace @student-dashboard/api"
   },
   "workspaces": [
     "apps/*"
@@ -31,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.64.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

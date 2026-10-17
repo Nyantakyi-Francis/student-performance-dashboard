@@ -12,13 +12,14 @@ import InsightsPanel from './components/InsightsPanel'
 import StudentDetailsModal from './components/StudentDetailsModal'
 import TermTrendChart from './components/TermTrendChart'
 import { filterStudents } from './utils/filters'
-import { fetchDashboardData, hasConfiguredApiBaseUrl } from './api/dashboard'
+import DatabaseView from './components/DatabaseView'
 
 const DASHBOARD_STORAGE_KEY = 'student-performance-dashboard:v2'
 
 function normalizeStudents(records) {
   return records.map((student) => ({
     ...student,
+    studentId: student.studentId ?? String(student.id),
     term: student.term || DEFAULT_TERM,
   }))
 }
@@ -82,66 +83,31 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [editingStudent, setEditingStudent] = useState(null)
   const [viewingStudent, setViewingStudent] = useState(null)
-  const [remoteStatus, setRemoteStatus] = useState(
-    hasConfiguredApiBaseUrl || import.meta.env.DEV ? 'loading' : 'empty'
-  )
-  const [remoteMessage, setRemoteMessage] = useState(
-    hasConfiguredApiBaseUrl || import.meta.env.DEV
-      ? 'Loading seeded records from the API.'
-      : 'Using the browser sample dataset.'
-  )
+  const [storageWarning, setStorageWarning] = useState('')
+  const [mode, setMode] = useState(() => {
+    try { return window.localStorage.getItem('student-dashboard:mode') === 'database' ? 'database' : 'sandbox' } catch { return 'sandbox' }
+  })
+  const changeMode = (nextMode) => {
+    setViewingStudent(null)
+    setMode(nextMode)
+    try { window.localStorage.setItem('student-dashboard:mode', nextMode) } catch { /* mode stays available in memory */ }
+  }
 
   useEffect(() => {
-    if (!hasConfiguredApiBaseUrl && !import.meta.env.DEV) {
-      return
-    }
-
-    let isCurrent = true
-
-    async function loadRemoteDashboardData() {
-      try {
-        const response = await fetchDashboardData()
-        if (!isCurrent) return
-
-        setStudents(response.data.students)
-        setSubjects(response.data.subjects)
-        setGrades(response.data.grades)
-        setTerms(response.data.terms)
-        setRemoteStatus(response.data.students.length > 0 ? 'success' : 'empty')
-        setRemoteMessage(
-          response.data.students.length > 0
-            ? 'Loaded seeded records from the API.'
-            : 'The API responded, but no student records were returned.'
-        )
-      } catch {
-        if (!isCurrent) return
-
-        setRemoteStatus('error')
-        setRemoteMessage(
-          'Could not reach the API. Showing the browser sample dataset.'
-        )
-      }
-    }
-
-    loadRemoteDashboardData()
-
-    return () => {
-      isCurrent = false
-    }
+    const failed = () => setStorageWarning('Browser storage is unavailable or full. Keep this tab open and export your sandbox data before leaving.')
+    window.addEventListener('sandbox-storage-failed', failed)
+    return () => window.removeEventListener('sandbox-storage-failed', failed)
   }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    window.localStorage.setItem(
-      DASHBOARD_STORAGE_KEY,
-      JSON.stringify({
-        grades,
-        students,
-        subjects,
-        terms,
-      })
-    )
+    try {
+      window.localStorage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify({ grades, students, subjects, terms }))
+    } catch {
+      window.dispatchEvent(new Event('sandbox-storage-failed'))
+    }
+
   }, [grades, students, subjects, terms])
 
   const filters = useMemo(
@@ -219,25 +185,20 @@ function App() {
       <header className="header">
         <h1>Student Performance Analytics Dashboard</h1>
         <p>
-          Import, analyze, and compare student performance across terms. Changes
-          save automatically in your browser.
+          Explore student performance in a browser sandbox or sign in to read school records.
         </p>
       </header>
 
       <main className="main-content">
-        <div
-          className={`remote-status remote-status--${remoteStatus}`}
-          role={remoteStatus === 'error' ? 'alert' : 'status'}
-        >
-          {remoteMessage}
-        </div>
-
-        <div className="demo-notice" role="note">
-          <strong>Synthetic demo only.</strong> Do not upload or enter real
-          student data. Authentication, authorization, tenant isolation, and
-          audit controls are not implemented yet.
-        </div>
-
+        <nav className="data-mode-switch" aria-label="Data source">
+          <button className="action-button secondary" aria-pressed={mode === 'sandbox'} onClick={() => changeMode('sandbox')}>Browser sandbox</button>
+          <button className="action-button secondary" aria-pressed={mode === 'database'} onClick={() => changeMode('database')}>Database view</button>
+        </nav>
+        <div className="demo-notice" role="note"><strong>Synthetic demo only.</strong> Use fictional student records in both modes.</div>
+        {mode === 'database' && <DatabaseView />}
+        <div hidden={mode !== 'sandbox'}>
+        <p role="status">Browser sandbox: edits save in this browser. Database records are kept separate.</p>
+        {storageWarning && <p role="alert">{storageWarning}</p>}
         <DataManager
           students={students}
           setStudents={setStudents}
@@ -295,6 +256,7 @@ function App() {
           onEditStudent={handleEditStudent}
           onViewStudent={handleViewStudent}
         />
+        </div>
       </main>
 
       <StudentDetailsModal

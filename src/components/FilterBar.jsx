@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { formatSubjectLabel } from '../data/config'
 
 function FilterBar({
@@ -17,12 +18,13 @@ function FilterBar({
   termOptions,
   subjects,
 }) {
+  const prefix = useId()
   return (
     <section className="filter-bar">
       <div className="filter-group">
-        <label htmlFor="search-student">Search Student</label>
+        <label htmlFor={`${prefix}-search-student`}>Search Student</label>
         <input
-          id="search-student"
+          id={`${prefix}-search-student`}
           type="text"
           placeholder="Enter student name"
           value={searchTerm}
@@ -31,9 +33,9 @@ function FilterBar({
       </div>
 
       <div className="filter-group">
-        <label htmlFor="grade-filter">Filter by Grade</label>
+        <label htmlFor={`${prefix}-grade-filter`}>Filter by Grade</label>
         <select
-          id="grade-filter"
+          id={`${prefix}-grade-filter`}
           value={selectedGrade}
           onChange={(e) => setSelectedGrade(e.target.value)}
         >
@@ -47,9 +49,9 @@ function FilterBar({
       </div>
 
       <div className="filter-group">
-        <label htmlFor="term-filter">Filter by Term</label>
+        <label htmlFor={`${prefix}-term-filter`}>Filter by Term</label>
         <select
-          id="term-filter"
+          id={`${prefix}-term-filter`}
           value={selectedTerm}
           onChange={(e) => setSelectedTerm(e.target.value)}
         >
@@ -63,9 +65,9 @@ function FilterBar({
       </div>
 
       <div className="filter-group">
-        <label htmlFor="gender-filter">Filter by Gender</label>
+        <label htmlFor={`${prefix}-gender-filter`}>Filter by Gender</label>
         <select
-          id="gender-filter"
+          id={`${prefix}-gender-filter`}
           value={selectedGender}
           onChange={(e) => setSelectedGender(e.target.value)}
         >
@@ -76,9 +78,9 @@ function FilterBar({
       </div>
 
       <div className="filter-group">
-        <label htmlFor="risk-filter">Filter by Risk Level</label>
+        <label htmlFor={`${prefix}-risk-filter`}>Filter by Risk Level</label>
         <select
-          id="risk-filter"
+          id={`${prefix}-risk-filter`}
           value={selectedRisk}
           onChange={(e) => setSelectedRisk(e.target.value)}
         >
@@ -87,13 +89,14 @@ function FilterBar({
           <option value="Good">Good</option>
           <option value="Average">Average</option>
           <option value="At Risk">At Risk</option>
+          <option value="No scores">No scores</option>
         </select>
       </div>
 
       <div className="filter-group">
-        <label htmlFor="subject-filter">Filter by Subject</label>
+        <label htmlFor={`${prefix}-subject-filter`}>Filter by Subject</label>
         <select
-          id="subject-filter"
+          id={`${prefix}-subject-filter`}
           value={selectedSubject}
           onChange={(e) => setSelectedSubject(e.target.value)}
         >

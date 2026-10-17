@@ -39,7 +39,7 @@ export const schools = pgTable(
     uniqueIndex('schools_slug_uidx').on(table.slug),
     check('schools_status_check', sql`${table.status} in ('active', 'inactive')`),
   ]
-)
+).enableRLS()
 
 export const academicYears = pgTable(
   'academic_years',
@@ -64,7 +64,7 @@ export const academicYears = pgTable(
       sql`${table.status} in ('planned', 'active', 'archived')`
     ),
   ]
-)
+).enableRLS()
 
 export const terms = pgTable(
   'terms',
@@ -96,7 +96,7 @@ export const terms = pgTable(
       sql`${table.status} in ('planned', 'open', 'locked', 'archived')`
     ),
   ]
-)
+).enableRLS()
 
 export const gradeLevels = pgTable(
   'grade_levels',
@@ -124,7 +124,7 @@ export const gradeLevels = pgTable(
       sql`${table.status} in ('active', 'inactive')`
     ),
   ]
-)
+).enableRLS()
 
 export const classGroups = pgTable(
   'class_groups',
@@ -154,7 +154,7 @@ export const classGroups = pgTable(
       sql`${table.status} in ('active', 'inactive', 'archived')`
     ),
   ]
-)
+).enableRLS()
 
 export const subjects = pgTable(
   'subjects',
@@ -174,7 +174,7 @@ export const subjects = pgTable(
     index('subjects_school_id_idx').on(table.schoolId),
     check('subjects_status_check', sql`${table.status} in ('active', 'inactive')`),
   ]
-)
+).enableRLS()
 
 export const students = pgTable(
   'students',
@@ -203,7 +203,7 @@ export const students = pgTable(
       sql`${table.status} in ('active', 'inactive', 'withdrawn', 'graduated')`
     ),
   ]
-)
+).enableRLS()
 
 export const enrollments = pgTable(
   'enrollments',
@@ -245,7 +245,7 @@ export const enrollments = pgTable(
       sql`${table.endsOn} is null or ${table.endsOn} >= ${table.startsOn}`
     ),
   ]
-)
+).enableRLS()
 
 export const assessments = pgTable(
   'assessments',
@@ -296,7 +296,7 @@ export const assessments = pgTable(
       sql`${table.status} in ('draft', 'submitted', 'published', 'archived')`
     ),
   ]
-)
+).enableRLS()
 
 export const scores = pgTable(
   'scores',
@@ -332,4 +332,66 @@ export const scores = pgTable(
     ),
     check('scores_version_check', sql`${table.version} > 0`),
   ]
-)
+).enableRLS()
+
+
+export const users = pgTable('users', {
+  id: identityId,
+  email: text('email').notNull(),
+  displayName: text('display_name').notNull(),
+  passwordHash: text('password_hash').notNull(),
+  status: text('status').notNull().default('active'),
+  createdAt,
+}, (table) => [
+  uniqueIndex('users_email_uidx').on(table.email),
+  check('users_status_check', sql`${table.status} in ('active', 'inactive')`),
+]).enableRLS()
+
+export const memberships = pgTable('memberships', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  userId: bigint('user_id', { mode: 'number' }).notNull().references(() => users.id),
+  role: text('role').notNull(),
+  status: text('status').notNull().default('active'),
+  createdAt,
+}, (table) => [
+  uniqueIndex('memberships_school_user_uidx').on(table.schoolId, table.userId),
+  index('memberships_user_idx').on(table.userId),
+  check('memberships_role_check', sql`${table.role} in ('administrator', 'teacher')`),
+  check('memberships_status_check', sql`${table.status} in ('active', 'inactive')`),
+]).enableRLS()
+
+export const sessions = pgTable('sessions', {
+  id: identityId,
+  membershipId: bigint('membership_id', { mode: 'number' }).notNull().references(() => memberships.id, { onDelete: 'cascade' }),
+  tokenHash: text('token_hash').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt,
+}, (table) => [
+  uniqueIndex('sessions_token_hash_uidx').on(table.tokenHash),
+  index('sessions_membership_idx').on(table.membershipId),
+  index('sessions_expiry_idx').on(table.expiresAt),
+]).enableRLS()
+
+export const teachingAssignments = pgTable('teaching_assignments', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  membershipId: bigint('membership_id', { mode: 'number' }).notNull().references(() => memberships.id),
+  classGroupId: bigint('class_group_id', { mode: 'number' }).notNull().references(() => classGroups.id),
+  subjectId: bigint('subject_id', { mode: 'number' }).notNull().references(() => subjects.id),
+  createdAt,
+}, (table) => [
+  uniqueIndex('assignments_membership_class_subject_uidx').on(table.membershipId, table.classGroupId, table.subjectId),
+  index('assignments_school_idx').on(table.schoolId),
+  index('assignments_class_idx').on(table.classGroupId),
+  index('assignments_subject_idx').on(table.subjectId),
+]).enableRLS()
+
+export const auditEvents = pgTable('audit_events', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  actorMembershipId: bigint('actor_membership_id', { mode: 'number' }).notNull().references(() => memberships.id),
+  action: text('action').notNull(),
+  targetId: text('target_id'),
+  createdAt,
+}, (table) => [index('audit_school_created_idx').on(table.schoolId, table.createdAt)]).enableRLS()

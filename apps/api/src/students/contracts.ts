@@ -3,18 +3,13 @@ import { z } from 'zod'
 export const studentListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(25),
   after: z.coerce.number().int().positive().optional(),
-  schoolId: z.coerce.number().int().positive(),
+  schoolId: z.coerce.number().int().positive().optional(),
 })
 
-export const dashboardDataQuerySchema = z
-  .object({
-    schoolId: z.coerce.number().int().positive().optional(),
-    schoolSlug: z.string().min(1).default('accra-demo-jhs'),
-  })
-  .refine((query) => query.schoolId || query.schoolSlug, {
-    message: 'A schoolId or schoolSlug is required.',
-    path: ['schoolId'],
-  })
+export const dashboardDataQuerySchema = z.object({
+  schoolId: z.coerce.number().int().positive().optional(),
+  schoolSlug: z.string().min(1).max(100).optional(),
+}).strict()
 
 export const studentSummarySchema = z.object({
   id: z.number().int().positive(),
@@ -41,7 +36,8 @@ export const dashboardStudentRecordSchema = z.object({
   gender: z.string().nullable(),
   grade: z.string().min(1),
   term: z.string().min(1),
-  scores: z.record(z.string().min(1), z.number().min(0).max(100)),
+  termId: z.number().int().positive(),
+  scores: z.record(z.string().min(1), z.number().min(0).max(100).nullable()),
 })
 
 export const dashboardDataResponseSchema = z.object({

@@ -1,26 +1,11 @@
-const DEFAULT_API_BASE_URL = 'http://127.0.0.1:3001'
-const DEFAULT_SCHOOL_SLUG = 'accra-demo-jhs'
+import { ApiError, createApiClient, validateDashboardResponse } from './client.js'
 
-export const hasConfiguredApiBaseUrl = Boolean(import.meta.env.VITE_API_BASE_URL)
-
-const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
-  (import.meta.env.DEV ? DEFAULT_API_BASE_URL : '')
-
-const schoolSlug = import.meta.env.VITE_DEMO_SCHOOL_SLUG || DEFAULT_SCHOOL_SLUG
-
-export async function fetchDashboardData() {
-  if (!apiBaseUrl) {
-    throw new Error('Dashboard API is not configured.')
-  }
-
-  const response = await fetch(
-    `${apiBaseUrl}/api/v1/dashboard-data?schoolSlug=${schoolSlug}`
-  )
-
-  if (!response.ok) {
-    throw new Error('Dashboard data could not be loaded.')
-  }
-
-  return response.json()
+export const hasConfiguredApiBaseUrl = Boolean(import.meta.env.VITE_API_BASE_URL) || import.meta.env.DEV
+const client = createApiClient(import.meta.env.VITE_API_BASE_URL || '')
+export function apiRequest(path, options) {
+  if (!hasConfiguredApiBaseUrl) throw new ApiError('Database access is not configured. Set VITE_API_BASE_URL and rebuild the frontend.', 'NOT_CONFIGURED')
+  return client(path, options)
+}
+export async function fetchDashboardData(options) {
+  return validateDashboardResponse(await apiRequest('/api/v1/dashboard-data', options))
 }

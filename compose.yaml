@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: student_dashboard
+      POSTGRES_PASSWORD: local-synthetic-password
+      POSTGRES_DB: student_dashboard
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - dashboard_postgres:/var/lib/postgresql/data
+      - ./scripts/init-test-database.sql:/docker-entrypoint-initdb.d/01-test-database.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U student_dashboard -d student_dashboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  dashboard_postgres:

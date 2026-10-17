@@ -12,7 +12,9 @@ function InsightsPanel({ students, subjects, terms }) {
   const insights = useMemo(() => {
     if (!students.length || !subjects.length) return null
 
-    const subjectAverages = getSubjectAverages(students, subjects)
+    const subjectAverages = getSubjectAverages(students, subjects).filter((item) => item.average !== null)
+
+    if (!subjectAverages.length) return null
 
     const bestSubject = subjectAverages.reduce((best, current) =>
       current.average > best.average ? current : best
@@ -40,6 +42,7 @@ function InsightsPanel({ students, subjects, terms }) {
     const gradePerformanceMap = {}
 
     averageByStudent.forEach(({ student, average }) => {
+      if (average === null) return
       if (!gradePerformanceMap[student.grade]) {
         gradePerformanceMap[student.grade] = {
           total: 0,

@@ -14,10 +14,11 @@ import {
   createEmptyScores,
   detectSubjectsFromRows,
   downloadBlobFile,
-  isValidStudentRecord,
+  validateImportRows,
   normalizeKey,
-  normalizeStudentRecord,
 } from '../utils/studentData'
+import { parseScore } from '../utils/scores'
+import { getStudentIdentity } from '../utils/analytics'
 import { createId } from '../utils/ids'
 
 function DataManager({
@@ -35,6 +36,7 @@ function DataManager({
   const [message, setMessage] = useState(null)
 
   const getDefaultFormState = () => ({
+    studentId: '',
     name: '',
     gender: 'Female',
     grade: grades[0] || 'Grade 7',
@@ -61,6 +63,7 @@ function DataManager({
       }, {})
 
       setFormData({
+        studentId: getStudentIdentity(editingStudent),
         name: editingStudent.name,
         gender: editingStudent.gender,
         grade: editingStudent.grade,
@@ -71,6 +74,7 @@ function DataManager({
     }
 
     setFormData((previous) => ({
+      studentId: previous.studentId,
       name: previous.name,
       gender: previous.gender || 'Female',
       grade: grades.includes(previous.grade) ? previous.grade : grades[0] || 'Grade 7',
@@ -109,6 +113,28 @@ function DataManager({
     setMessage({ type: 'success', text: `Loaded ${parsedStudents.length} record(s).` })
   }
 
+  const validateAndUpload = (rows, parserErrors = []) => {
+    const detectedSubjects = detectSubjectsFromRows(rows, detectedSubjectSeed)
+    const result = validateImportRows(rows, detectedSubjects, terms)
+    const errors = [
+      ...parserErrors.map((error) => `Row ${(error.row ?? 0) + 2}: ${error.message}`),
+      ...result.errors,
+    ]
+    if (uploadMode === 'append') {
+      const existing = new Set(students.map((student) => JSON.stringify([getStudentIdentity(student), student.term])))
+      result.students.forEach((student, index) => {
+        if (existing.has(JSON.stringify([student.studentId, student.term]))) {
+          errors.push(`Row ${index + 2}: this student ID already has a record for ${student.term}. Edit that record instead.`)
+        }
+      })
+    }
+    if (errors.length) {
+      setMessage({ type: 'error', text: 'Import rejected. No records changed.', errors })
+      return
+    }
+    applyUploadData(result.students, detectedSubjects)
+  }
+
   const handleCsvUpload = (event) => {
     const file = event.target.files[0]
     if (!file) return
@@ -117,12 +143,7 @@ function DataManager({
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const detectedSubjects = detectSubjectsFromRows(results.data, detectedSubjectSeed)
-        const parsedStudents = results.data
-          .map((row) => normalizeStudentRecord(row, detectedSubjects, terms))
-          .filter(isValidStudentRecord)
-
-        applyUploadData(parsedStudents, detectedSubjects)
+        validateAndUpload(results.data, results.errors)
       },
       error: () => {
         setMessage({ type: 'error', text: 'Failed to parse CSV file.' })
@@ -143,12 +164,7 @@ function DataManager({
       const firstSheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[firstSheetName]
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
-      const detectedSubjects = detectSubjectsFromRows(jsonData, detectedSubjectSeed)
-      const parsedStudents = jsonData
-        .map((row) => normalizeStudentRecord(row, detectedSubjects, terms))
-        .filter(isValidStudentRecord)
-
-      applyUploadData(parsedStudents, detectedSubjects)
+      validateAndUpload(jsonData)
     } catch {
       setMessage({ type: 'error', text: 'Failed to parse Excel file.' })
     }
@@ -179,16 +195,17 @@ function DataManager({
 
     const scoreObject = {}
     subjects.forEach((subject) => {
-      scoreObject[subject] = Number(formData.scores[subject])
+      scoreObject[subject] = parseScore(formData.scores[subject])
     })
 
     const scoreValues = Object.values(scoreObject)
     const hasInvalidScore = scoreValues.some(
-      (score) => Number.isNaN(score) || score < 0 || score > 100
+      (score) => score !== null && (!Number.isFinite(score) || score < 0 || score > 100)
     )
 
     const studentRecord = {
       id: editingStudent ? editingStudent.id : createId(),
+      studentId: editingStudent ? getStudentIdentity(editingStudent) : formData.studentId.trim() || createId(),
       name: formData.name.trim(),
       gender: formData.gender,
       grade: formData.grade,
@@ -206,6 +223,11 @@ function DataManager({
         type: 'error',
         text: 'Enter a valid name, grade, term, and scores between 0 and 100.',
       })
+      return
+    }
+
+    if (students.some((student) => student.id !== studentRecord.id && getStudentIdentity(student) === studentRecord.studentId && student.term === studentRecord.term)) {
+      setMessage({ type: 'error', text: 'This student ID already has a record for that term. Edit the existing record.' })
       return
     }
 
@@ -242,7 +264,7 @@ function DataManager({
         ...student,
         scores: {
           ...student.scores,
-          [subjectKey]: 0,
+          [subjectKey]: null,
         },
       }))
     )
@@ -333,6 +355,9 @@ function DataManager({
           role={message.type === 'error' ? 'alert' : 'status'}
         >
           {message.text}
+          {message.errors?.length > 0 && (
+            <ul>{message.errors.map((error, index) => <li key={index}>{error}</li>)}</ul>
+          )}
         </div>
       )}
 
@@ -415,7 +440,12 @@ function DataManager({
         <div className="manager-main">
           <h3>{editingStudent ? 'Edit Student Record' : 'Manual Student Entry'}</h3>
 
+          <p>Blank scores mean missing work and are excluded from averages. Use the same student ID for each term; leave it blank for a new student.</p>
           <form className="student-form" onSubmit={handleManualSubmit}>
+            <label>
+              Student ID
+              <input name="studentId" value={formData.studentId} onChange={handleBasicChange} readOnly={Boolean(editingStudent)} placeholder="Auto-generated for new students" />
+            </label>
             <input
               type="text"
               name="name"
@@ -455,7 +485,8 @@ function DataManager({
                 placeholder={formatSubjectLabel(subject)}
                 value={formData.scores[subject] ?? ''}
                 onChange={(event) => handleScoreChange(subject, event.target.value)}
-                required
+                step="any"
+                aria-label={formatSubjectLabel(subject)}
               />
             ))}
 
