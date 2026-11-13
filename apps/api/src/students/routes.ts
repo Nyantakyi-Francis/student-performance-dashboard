@@ -2,11 +2,11 @@ import type { FastifyInstance } from 'fastify'
 import type { Database } from '../database/client.js'
 import { dashboardDataResponseSchema, dashboardDataQuerySchema, studentListQuerySchema, studentListResponseSchema } from './contracts.js'
 import { getDashboardData, listStudents } from './repository.js'
-import { fail, requireSession } from '../auth/access.js'
+import { fail, requireStaff } from '../auth/access.js'
 
 export async function registerStudentRoutes(app: FastifyInstance, database: Database) {
   await app.register(async (protectedApp) => {
-    protectedApp.addHook('preHandler', async (request, reply) => requireSession(request, reply))
+    protectedApp.addHook('preHandler', async (request, reply) => requireStaff(request, reply))
     protectedApp.get('/api/v1/students', async (request, reply) => {
       const parsed = studentListQuerySchema.safeParse(request.query)
       if (!parsed.success) return fail(reply, request, 400, 'VALIDATION_ERROR', 'The student query is invalid.')

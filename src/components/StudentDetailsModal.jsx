@@ -15,6 +15,14 @@ function StudentDetailsModal({ student, subjects, onClose }) {
       if (event.key === 'Escape') {
         onClose()
       }
+      if (event.key === 'Tab') {
+        const dialog = closeButtonRef.current?.closest('[role="dialog"]')
+        const focusable = dialog?.querySelectorAll('button, input, select, textarea, a[href], [tabindex="0"]')
+        if (!focusable?.length) return
+        const first = focusable[0], last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+      }
     }
 
     const previousOverflow = document.body.style.overflow

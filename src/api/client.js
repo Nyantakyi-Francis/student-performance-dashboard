@@ -20,7 +20,7 @@ export function validateDashboardResponse(response) {
 
 export function validateSessionResponse(response) {
   const data = response?.data
-  if (!data || !['administrator', 'teacher'].includes(data.role) || !Number.isSafeInteger(data.membershipId) || !Number.isSafeInteger(data.schoolId) || !Number.isSafeInteger(data.userId) || !['displayName', 'schoolName', 'schoolSlug'].every((key) => typeof data[key] === 'string')) throw new ApiError('The API returned an invalid session.', 'INVALID_RESPONSE')
+  if (!data || !['administrator', 'teacher', 'student', 'guardian'].includes(data.role) || !Number.isSafeInteger(data.membershipId) || !Number.isSafeInteger(data.schoolId) || !Number.isSafeInteger(data.userId) || !['displayName', 'schoolName', 'schoolSlug'].every((key) => typeof data[key] === 'string')) throw new ApiError('The API returned an invalid session.', 'INVALID_RESPONSE')
   return data
 }
 

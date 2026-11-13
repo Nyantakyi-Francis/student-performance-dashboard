@@ -87,9 +87,10 @@ function SubjectBarChart({ students, subjects }) {
         {subjectAverages.every((item) => item.average === null) ? (
           <h2>No data available for this filter</h2>
         ) : (
-          <Bar data={data} options={options} />
+          <Bar data={data} options={options} role="img" aria-label="Subject average chart; values are in the table below" />
         )}
       </div>
+      <details className="chart-data"><summary>Subject averages as a table</summary><table><caption>Recorded scores by subject</caption><thead><tr><th scope="col">Subject</th><th scope="col">Average (%)</th><th scope="col">Recorded scores</th></tr></thead><tbody>{subjectAverages.map((item) => <tr key={item.subject}><th scope="row">{formatSubjectLabel(item.subject)}</th><td>{item.average === null ? 'No scores' : item.average.toFixed(1)}</td><td>{item.count}</td></tr>)}</tbody></table></details>
     </div>
   )
 }

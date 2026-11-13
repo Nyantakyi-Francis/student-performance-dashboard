@@ -11,6 +11,10 @@ import TermTrendChart from './TermTrendChart'
 import StudentTable from './StudentTable'
 import StudentDetailsModal from './StudentDetailsModal'
 import AccessManager from './AccessManager'
+import AssessmentWorkspace from './AssessmentWorkspace'
+import PublishedReports from './PublishedReports'
+import AccountManager from './AccountManager'
+import AccountRecovery from './AccountRecovery'
 
 const initialFilters = { searchTerm: '', selectedGender: 'All', selectedGrade: 'All', selectedRisk: 'All', selectedSubject: 'All', selectedTerm: 'All' }
 
@@ -34,12 +38,19 @@ export default function DatabaseView() {
       try {
         const response = await apiRequest('/api/v1/auth/session', { signal: controller.signal })
         if (controller.signal.aborted) return
-        setSession(validateSessionResponse(response))
+        const principal = validateSessionResponse(response)
+        setSession(principal)
+        if (['student', 'guardian'].includes(principal.role)) {
+          setData(null)
+          setStatus('success')
+          setMessage('Signed in. Your published reports appear below.')
+          return
+        }
         const dashboard = await fetchDashboardData({ signal: controller.signal })
         if (controller.signal.aborted) return
         setData(dashboard)
         setStatus(dashboard.students.length ? 'success' : 'empty')
-        setMessage(dashboard.students.length ? 'Database records loaded. This view is read-only.' : 'No records are available for your school or teaching assignments.')
+        setMessage(dashboard.students.length ? 'Database records loaded. The analytics table is read-only; use the assessment workspace to save scores.' : 'No records are available for your school or teaching assignments.')
       } catch (error) {
         if (controller.signal.aborted) return
         setData(null)
@@ -78,6 +89,7 @@ export default function DatabaseView() {
     } finally { setSigningIn(false) }
   }
   const signOut = async () => {
+    if (!window.dispatchEvent(new Event('before-school-navigation', { cancelable: true }))) return
     loadController.current?.abort()
     setSigningOut(true)
     try {
@@ -105,13 +117,19 @@ export default function DatabaseView() {
     setMessage('Your session expired or access changed. Sign in again.')
   }, [])
   const closeModal = useCallback(() => setViewingStudent(null), [])
+  const refreshWorkflow = useCallback(() => setReload((value) => value + 1), [])
+  useEffect(() => {
+    const expired = () => { if (session) clearExpiredSession() }
+    window.addEventListener('school-session-expired', expired)
+    return () => window.removeEventListener('school-session-expired', expired)
+  }, [session, clearExpiredSession])
 
   return (
     <section aria-label="Database view">
       <div className={`remote-status remote-status--${status}`} role={status === 'error' ? 'alert' : 'status'}>
         {message}
       </div>
-      <p>Database records are read-only and are not saved in browser storage. Sandbox edits stay separate.</p>
+      <p>Database records are not saved in browser storage. Sandbox edits stay separate. Staff analytics include drafts and use the sandbox's fixed risk bands; published reports use their saved grading policy.</p>
       {session ? (
         <div className="database-session">
           <p>Signed in as {session.displayName} ({session.role}) at {session.schoolName}.</p>
@@ -126,9 +144,13 @@ export default function DatabaseView() {
           <button className="action-button" disabled={signingIn}>{signingIn ? 'Signing in...' : 'Sign in'}</button>
         </form>
       ) : null}
+      {!session && hasConfiguredApiBaseUrl && <AccountRecovery />}
       {status !== 'loading' && hasConfiguredApiBaseUrl && <button className="action-button secondary" onClick={retry}>Reload database records</button>}
       {session?.role === 'administrator' && status !== 'loading' && <AccessManager onUnauthorized={clearExpiredSession} />}
       {session?.role === 'teacher' && <p>Your view includes only assigned classes and subjects. Ask your administrator to change your assignments.</p>}
+      {session && <PublishedReports revision={reload} />}
+      {session && ['administrator', 'teacher'].includes(session.role) && <AssessmentWorkspace role={session.role} onChanged={refreshWorkflow} />}
+      {session?.role === 'administrator' && <AccountManager />}
       {session && data && (
         <>
           <FilterBar {...filters}

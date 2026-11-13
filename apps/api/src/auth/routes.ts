@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import { normalizeIP } from '@fastify/rate-limit'
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import type { FastifyInstance } from 'fastify'
@@ -23,7 +24,7 @@ export async function registerAuthRoutes(app: FastifyInstance, database: Databas
     path: '/api', maxAge: 8 * 60 * 60,
   }
 
-  app.post('/api/v1/auth/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
+  app.post('/api/v1/auth/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute', keyGenerator: (request) => normalizeIP(request.ip) } } }, async (request, reply) => {
     const parsed = credentialsSchema.safeParse(request.body)
     if (!parsed.success) return fail(reply, request, 400, 'VALIDATION_ERROR', 'Enter an email, password, and school.')
     const [account] = await database.select({

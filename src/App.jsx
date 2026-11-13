@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import initialStudents from './data/students'
 import { DEFAULT_TERM, defaultSubjects, defaultGrades, defaultTerms } from './data/config'
@@ -12,7 +12,7 @@ import InsightsPanel from './components/InsightsPanel'
 import StudentDetailsModal from './components/StudentDetailsModal'
 import TermTrendChart from './components/TermTrendChart'
 import { filterStudents } from './utils/filters'
-import DatabaseView from './components/DatabaseView'
+const DatabaseView = lazy(() => import('./components/DatabaseView'))
 
 const DASHBOARD_STORAGE_KEY = 'student-performance-dashboard:v2'
 
@@ -88,6 +88,7 @@ function App() {
     try { return window.localStorage.getItem('student-dashboard:mode') === 'database' ? 'database' : 'sandbox' } catch { return 'sandbox' }
   })
   const changeMode = (nextMode) => {
+    if (nextMode !== mode && !window.dispatchEvent(new Event('before-school-navigation', { cancelable: true }))) return
     setViewingStudent(null)
     setMode(nextMode)
     try { window.localStorage.setItem('student-dashboard:mode', nextMode) } catch { /* mode stays available in memory */ }
@@ -195,7 +196,7 @@ function App() {
           <button className="action-button secondary" aria-pressed={mode === 'database'} onClick={() => changeMode('database')}>Database view</button>
         </nav>
         <div className="demo-notice" role="note"><strong>Synthetic demo only.</strong> Use fictional student records in both modes.</div>
-        {mode === 'database' && <DatabaseView />}
+        {mode === 'database' && <Suspense fallback={<p role="status">Loading school workspace…</p>}><DatabaseView /></Suspense>}
         <div hidden={mode !== 'sandbox'}>
         <p role="status">Browser sandbox: edits save in this browser. Database records are kept separate.</p>
         {storageWarning && <p role="alert">{storageWarning}</p>}

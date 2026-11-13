@@ -15,6 +15,20 @@
       "when": 1792174510949,
       "tag": "0001_session_access",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794594284619,
+      "tag": "0002_square_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794597699701,
+      "tag": "0003_past_mandroid",
+      "breakpoints": true
     }
   ]
 }

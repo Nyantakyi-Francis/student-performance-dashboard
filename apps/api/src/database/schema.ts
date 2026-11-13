@@ -3,6 +3,7 @@ import {
   check,
   date,
   index,
+  jsonb,
   numeric,
   pgTable,
   smallint,
@@ -23,6 +24,12 @@ const createdAt = timestamp('created_at', { withTimezone: true })
 const updatedAt = timestamp('updated_at', { withTimezone: true })
   .notNull()
   .defaultNow()
+
+export const rateLimitBuckets = pgTable('rate_limit_buckets', {
+  key: text('key').primaryKey(),
+  hits: bigint('hits', { mode: 'number' }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+}, (table) => [index('rate_limit_buckets_expiry_idx').on(table.expiresAt)]).enableRLS()
 
 export const schools = pgTable(
   'schools',
@@ -357,7 +364,7 @@ export const memberships = pgTable('memberships', {
 }, (table) => [
   uniqueIndex('memberships_school_user_uidx').on(table.schoolId, table.userId),
   index('memberships_user_idx').on(table.userId),
-  check('memberships_role_check', sql`${table.role} in ('administrator', 'teacher')`),
+  check('memberships_role_check', sql`${table.role} in ('administrator', 'teacher', 'student', 'guardian')`),
   check('memberships_status_check', sql`${table.status} in ('active', 'inactive')`),
 ]).enableRLS()
 
@@ -395,3 +402,65 @@ export const auditEvents = pgTable('audit_events', {
   targetId: text('target_id'),
   createdAt,
 }, (table) => [index('audit_school_created_idx').on(table.schoolId, table.createdAt)]).enableRLS()
+
+export const gradingPolicies = pgTable('grading_policies', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  version: bigint('version', { mode: 'number' }).notNull(),
+  passMark: numeric('pass_mark', { precision: 5, scale: 2 }).notNull(),
+  excellentMark: numeric('excellent_mark', { precision: 5, scale: 2 }).notNull(),
+  goodMark: numeric('good_mark', { precision: 5, scale: 2 }).notNull(),
+  minimumScores: smallint('minimum_scores').notNull().default(1),
+  createdAt,
+}, (t) => [uniqueIndex('grading_policies_school_version_uidx').on(t.schoolId, t.version),
+  check('grading_policy_thresholds', sql`${t.passMark} >= 0 and ${t.passMark} < ${t.goodMark} and ${t.goodMark} < ${t.excellentMark} and ${t.excellentMark} <= 100 and ${t.minimumScores} > 0`),
+]).enableRLS()
+
+export const studentLinks = pgTable('student_links', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  membershipId: bigint('membership_id', { mode: 'number' }).notNull().references(() => memberships.id, { onDelete: 'cascade' }),
+  studentId: bigint('student_id', { mode: 'number' }).notNull().references(() => students.id),
+}, (t) => [uniqueIndex('student_links_member_student_uidx').on(t.membershipId, t.studentId), index('student_links_school_idx').on(t.schoolId)]).enableRLS()
+
+export const publications = pgTable('publications', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  assessmentId: bigint('assessment_id', { mode: 'number' }).notNull().references(() => assessments.id),
+  assessmentVersion: bigint('assessment_version', { mode: 'number' }).notNull(),
+  policyId: bigint('policy_id', { mode: 'number' }).notNull().references(() => gradingPolicies.id),
+  snapshot: jsonb('snapshot').notNull(),
+  reason: text('reason').notNull(),
+  createdAt,
+}, (t) => [uniqueIndex('publications_assessment_version_uidx').on(t.assessmentId, t.assessmentVersion), index('publications_school_idx').on(t.schoolId)]).enableRLS()
+
+export const importPreviews = pgTable('import_previews', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  membershipId: bigint('membership_id', { mode: 'number' }).notNull().references(() => memberships.id),
+  assessmentId: bigint('assessment_id', { mode: 'number' }).notNull().references(() => assessments.id),
+  assessmentVersion: bigint('assessment_version', { mode: 'number' }).notNull(),
+  rows: jsonb('rows').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  committedAt: timestamp('committed_at', { withTimezone: true }),
+}, (t) => [index('import_previews_school_idx').on(t.schoolId)]).enableRLS()
+
+export const accountTokens = pgTable('account_tokens', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  email: text('email').notNull(),
+  displayName: text('display_name').notNull(),
+  kind: text('kind').notNull(),
+  role: text('role').notNull(),
+  studentIds: jsonb('student_ids').$type<number[]>().notNull(),
+  tokenHash: text('token_hash').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+}, (t) => [uniqueIndex('account_tokens_hash_uidx').on(t.tokenHash), index('account_tokens_school_idx').on(t.schoolId)]).enableRLS()
+
+export const recoveryRequests = pgTable('recovery_requests', {
+  id: identityId,
+  schoolId: bigint('school_id', { mode: 'number' }).notNull().references(() => schools.id),
+  membershipId: bigint('membership_id', { mode: 'number' }).notNull().references(() => memberships.id, { onDelete: 'cascade' }),
+  createdAt,
+}, (t) => [uniqueIndex('recovery_requests_membership_uidx').on(t.membershipId)]).enableRLS()

@@ -16,7 +16,8 @@
     "supabase:dry-run": "supabase db push --linked --dry-run",
     "supabase:push": "supabase db push --linked",
     "test": "node --test src/utils/*.test.js src/api/*.test.js && npm run api:test",
-    "typecheck": "npm run api:typecheck",
+    "typecheck": "npm run api:typecheck && npm run web:typecheck && tsc -p tsconfig.vercel.json",
+    "web:typecheck": "tsc -p tsconfig.web.json",
     "test:e2e": "playwright test",
     "test:integration": "npm run test:integration --workspace @student-dashboard/api",
     "db:migrate": "npm run db:migrate --workspace @student-dashboard/api",
@@ -32,11 +33,14 @@
     "react": "^19.2.4",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.4",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^9.39.4",
     "@playwright/test": "^1.64.1",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

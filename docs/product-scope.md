@@ -1,5 +1,7 @@
 # Product scope
 
+Current delivery status is recorded in [implementation plan](implementation-plan.md). The synthetic staff-write and learner-report workflow is implemented locally. Full academic setup administration, assessment categories, automated account delivery and wider operational readiness remain beyond this increment; the scope below describes the broader product direction.
+
 ## Working name
 
 Student Performance Dashboard
@@ -152,4 +154,3 @@ It includes:
 - CI checks for linting, types, tests, and production builds.
 
 Authentication and mutations follow after this read path works end to end.
-

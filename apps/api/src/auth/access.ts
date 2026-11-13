@@ -45,3 +45,9 @@ export function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
   if (denied) return denied
   if (request.principal?.role !== 'administrator') return fail(reply, request, 403, 'FORBIDDEN', 'Administrator access is required.')
 }
+
+export function requireStaff(request: FastifyRequest, reply: FastifyReply) {
+  const denied = requireSession(request, reply)
+  if (denied) return denied
+  if (!['administrator', 'teacher'].includes(request.principal!.role)) return fail(reply, request, 403, 'FORBIDDEN', 'Staff access is required.')
+}

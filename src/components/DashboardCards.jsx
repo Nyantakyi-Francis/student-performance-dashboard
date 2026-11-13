@@ -40,6 +40,7 @@ function DashboardCards({ students, subjects }) {
           <p>{card.value}</p>
         </div>
       ))}
+      <p className="chart-description">Class average weights subjects with recorded scores equally. Unique students counts stable IDs; term charts count student-term records. Records without scores are excluded from averages.</p>
     </section>
   )
 }

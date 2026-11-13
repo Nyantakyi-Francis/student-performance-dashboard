@@ -22,4 +22,30 @@ Subject totals normalize each recorded assessment to a percentage, multiply by i
 
 Errors use `{error:{code,message,requestId,fields:[]}}`. Codes include `UNAUTHENTICATED` (401), `INVALID_CREDENTIALS` (401), `FORBIDDEN` (403), `ORIGIN_DENIED` (403), `CSRF_REJECTED` (403), `VALIDATION_ERROR` (400), `INVALID_ASSIGNMENT` (400), `ASSIGNMENT_NOT_FOUND` (404), `RATE_LIMITED` (429), and `INTERNAL_ERROR` (500). SQL and stack details are not returned. Cross-school assignment IDs are not disclosed by delete responses.
 
-The API has no student/score mutation, role-escalation, public registration, password-reset, or student/guardian reporting endpoints. Administrator assignment management is the only academic-access mutation in this release.
+Student profile creation and enrollment editing remain outside the current API. Assessment/score writes, publication, account provisioning and reports are described below. Public self-registration and arbitrary role escalation are not supported.
+
+## School workflow endpoints
+
+| Method and path | Access | Behavior |
+| --- | --- | --- |
+| GET `/api/v1/workspace` | Staff | Permitted classes, subjects, terms, assessments and policy |
+| POST `/api/v1/assessments` | Assigned staff | Create draft; class/term year and date must agree |
+| GET `/api/v1/assessments/:id` | Assigned staff | Assessment version and roster with score states |
+| POST `/api/v1/assessments/:id/scores` | Assigned staff | `{version,reason,rows:[{enrollmentId,status,points,feedback}]}`; atomic versioned save |
+| POST `/api/v1/grading-policies` | Administrator | Immutable `{passMark,goodMark,excellentMark,minimumScores}` version |
+| POST `/api/v1/assessments/:id/publish` | Assigned staff | `{version,policyVersion,reason}`; snapshot and audit reason |
+| POST `/api/v1/assessments/:id/import-preview` | Assigned staff | Score-save shape, at most 500 rows; preview ID or row errors, no score writes |
+| POST `/api/v1/imports/:id/commit` | Preview owner | Recheck access/version and commit once; JSON `{}` |
+| GET `/api/v1/reports` | Authenticated | Latest published snapshots and scoped totals |
+| GET `/api/v1/admin/accounts` | Administrator | Memberships, recovery requests, students and 100 recent audit events |
+| POST `/api/v1/admin/invitations` | Administrator, current password | `{email,displayName,role,studentIds,password}`; token for manual delivery |
+| POST `/api/v1/admin/accounts/:id/recovery` | Administrator, current password | `{password}`; recovery token for verified manual delivery |
+| POST `/api/v1/admin/accounts/:id/deactivate` | Administrator | JSON `{}`; revoke another membership and sessions |
+| POST `/api/v1/auth/recovery-request` | Public, rate limited | `{email,schoolSlug}`; same response for known/unknown identities |
+| POST `/api/v1/auth/redeem` | Public, rate limited | `{token,password}`; invitation acceptance or password recovery |
+
+Every POST uses JSON and `x-dashboard-request: 1`. Score saves/previews permit 512 KB bodies; other requests retain the 16 KB limit. Preview expiry is 15 minutes. Stale versions yield HTTP 409 `VERSION_CONFLICT`; changed policy yields `POLICY_CHANGED`; locked periods yield `TERM_LOCKED`. Non-scored states require null points. Scored points must be finite and within the maximum. Wrong rosters and duplicates reject the whole save.
+
+General requests allow 120 per minute per verified membership, or per normalized IP for anonymous requests. Login retains a separate 10-per-minute IP limit; recovery request and token redemption each allow five per 15 minutes per IP. Rate-limit failures use the stable `RATE_LIMITED` JSON envelope. Limiting is in memory and requires shared storage before running multiple API instances.
+
+Published totals group by term, subject and policy version. They show assessment count, recorded count and weight denominator. Draft staff analytics remain advisory and separate from published calculations. New drafts and policies never rewrite existing publication snapshots.

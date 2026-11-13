@@ -90,13 +90,14 @@ function TermTrendChart({ students, subjects, terms }) {
       </div>
 
       <div className="chart-inner">
-        <Line data={data} options={options} />
+        <Line data={data} options={options} role="img" aria-label="Term performance trend; values are in the table below" />
       </div>
 
       <p className="chart-description">
         Each point represents the class average for that term across the filtered
         student records.
       </p>
+      <details className="chart-data"><summary>Term averages as a table</summary><table><caption>Term averages and denominators</caption><thead><tr><th scope="col">Term</th><th scope="col">Average (%)</th><th scope="col">Records with scores</th></tr></thead><tbody>{termPerformance.map((item) => <tr key={item.term}><th scope="row">{item.term}</th><td>{item.average.toFixed(1)}</td><td>{item.count}</td></tr>)}</tbody></table></details>
     </section>
   )
 }

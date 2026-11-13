@@ -122,9 +122,19 @@ This dashboard is designed as if it were being handed to a school administrator:
 - exports make it easy to move processed data back into spreadsheets
 - trend analysis helps identify improvement or decline over time
 
-## Next Improvements
+## School workflow
 
-- account invitations and password recovery
-- PDF reporting for class summaries
-- verify the authenticated API behind a same-origin production proxy
-- server-side score entry and result publication
+Staff can create assessments, save draft scores, preview and commit mapped CSV imports, and publish immutable result snapshots. Score saves reject stale versions. Published reports retain their source version and grading-policy version; later draft edits require an amendment reason and do not change the report until republished.
+
+Administrators create grading-policy versions, issue single-use invitation and recovery links, deactivate school memberships, and review audit events. Invitations and recovery require the administrator's current password. Links are handed over manually after verifying the recipient; the app sends no email. Students and guardians see published results only for explicitly linked students.
+
+The sandbox remains separate. Staff analytics use its fixed advisory thresholds; official report totals use the policy saved in each publication. New workflow screens and API adapters have TypeScript checks; legacy frontend modules remain JavaScript.
+
+See [implementation plan](docs/implementation-plan.md), [workflow guide](docs/school-workflow.md), and [deployment checklist](docs/deployment.md).
+
+## Later work
+
+- PDF generation beyond browser printing
+- automated account-message delivery through a configured provider
+- broader school-setup administration and assessment categories
+- migration of the remaining JavaScript frontend modules

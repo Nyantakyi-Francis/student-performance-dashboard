@@ -16,7 +16,7 @@ npm run db:seed
 npm run db:seed:accounts
 ```
 
-The academic seed is repeatable. The account seed creates `admin@demo.example` and `teacher@demo.example` at school code `accra-demo-jhs`. Passwords come from `DEMO_ADMIN_PASSWORD` and `DEMO_TEACHER_PASSWORD` in the API environment and must have 12-128 characters. Re-running the account seed does not reset passwords or replace existing assignment decisions. A new teacher membership initially receives Grade 7 / English access.
+The account seed creates administrator, teacher, student and guardian accounts at school code `accra-demo-jhs`. See [demo account details](school-workflow.md#demo-accounts) for emails, passwords and learner links. Passwords must have 12–128 characters. Rerunning the account seed preserves existing credentials and assignment decisions. The academic seed replaces its synthetic fixtures, so do not rerun it over edited results you need to retain.
 
 Existing Supabase installations that applied `supabase/migrations` should keep using that migration history: review `npm run supabase:dry-run`, then apply the pending migration through that path. Do not run Drizzle's initial migration over tables already created by Supabase. Both directories contain the same session/access migration. No hosted database is migrated automatically by this change.
 
@@ -33,7 +33,7 @@ Open the Vite URL. The default Browser sandbox works without PostgreSQL or an ac
 
 Sandbox edits and its unfinished entry form stay mounted when switching modes. Committed sandbox records survive refresh in the existing `student-performance-dashboard:v2` storage key. Unsaved form fields survive mode switching but are not persisted across a full refresh. Database responses, passwords, and session tokens are never written to localStorage. A database request failure shows an error and retry action without falling back to sandbox records.
 
-Administrators can read their school's dashboard and roster, assign teachers to active classes/subjects, and remove assignments. Teachers see only assigned class rosters and scores for assigned subjects. Both roles have a read-only database dashboard. Student/guardian accounts and server-side student/score editing remain later work.
+Administrators manage teacher assignments, policy versions and accounts, and inspect audit history. Teachers edit assessments/scores only for assigned class/subject pairs. The analytics table remains read-only; the assessment workspace performs versioned saves. Students and guardians see published snapshots for linked students. See [school workflow](school-workflow.md) for imports, publication, invitations and recovery.
 
 ## Checks
 
@@ -46,7 +46,7 @@ npm run api:build
 npm run api:smoke
 ```
 
-`typecheck` covers the TypeScript API; the frontend remains JavaScript with runtime API validation. `api:smoke` signs in using the seeded administrator and `DEMO_ADMIN_PASSWORD`.
+`typecheck` covers the TypeScript API and new typed frontend workflow screens/adapters. Legacy frontend modules remain JavaScript. `api:smoke` signs in using the seeded administrator and `DEMO_ADMIN_PASSWORD`.
 
 Integration tests require an explicitly selected database with a name ending in `_test`. They apply migrations and remove only their own randomly named fixtures. They do not truncate tables. Set `TEST_DATABASE_URL` in your terminal environment; do not point it at a database containing real records.
 
@@ -72,6 +72,6 @@ GitHub Actions runs these checks with PostgreSQL 17, creates synthetic accounts,
 
 Use HTTPS and configure `CLIENT_ORIGIN` to exact trusted frontend origins. Production cookies are Secure, HttpOnly, SameSite=Lax, scoped to `/api`, and expire after eight hours. Prefer a same-origin `/api` reverse proxy and build the frontend with `VITE_API_BASE_URL=/`. A same-site API subdomain also works with an explicit HTTPS `VITE_API_BASE_URL` and credentialed CORS.
 
-Unrelated Vercel and Render domains are cross-site: the Lax cookie will not authenticate cross-site fetches. Configure the proxy or same-site domains before enabling database view there. Do not weaken cookie policy to work around deployment layout. No deployment or hosted credentials were changed by this implementation.
+Unrelated Vercel and Render domains are cross-site: the Lax cookie will not authenticate cross-site fetches. Configure the proxy or same-site domains before enabling database view there. Do not weaken cookie policy to work around deployment layout. The Vercel migration now uses a same-origin function adapter; preview deployments and sensitive preview variables have been configured. Hosted database changes and production promotion remain pending. See deployment.md.
 
-For multiple API instances, use a shared rate-limit store before scaling; the current limiter is per process. Provision account invitation, password reset, monitoring, audit review, and recovery procedures before considering real student data. The public demo remains synthetic-only.
+For multiple API instances, use a shared rate-limit store before scaling; the current limiter is per process. Invitations and recovery use administrator-issued links with manual delivery. Configure recipient verification, monitoring, audit review and backup/recovery procedures before considering real student data. The public demo remains synthetic-only. See the [deployment checklist](deployment.md) for proxy configuration and external blockers.

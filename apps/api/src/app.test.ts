@@ -11,6 +11,13 @@ afterEach(async () => {
 })
 
 describe('API application', () => {
+  it('allows its exact Vercel preview origin and rejects an origin supplied through forwarded headers', async () => {
+    app = await buildApp({ config: parseConfig({ NODE_ENV: 'test', VERCEL_URL: 'dashboard-preview.vercel.app' }) })
+    expect((await app.inject({ method: 'GET', url: '/health', headers: { origin: 'https://dashboard-preview.vercel.app' } })).statusCode).toBe(200)
+    const denied = await app.inject({ method: 'GET', url: '/health', headers: { origin: 'https://attacker.example', 'x-forwarded-host': 'attacker.example' } })
+    expect(denied.statusCode).toBe(403)
+    expect(denied.json().error.code).toBe('ORIGIN_DENIED')
+  })
   it('reports health without requiring a database connection', async () => {
     app = await buildApp({ config: parseConfig({ NODE_ENV: 'test' }) })
 

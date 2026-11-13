@@ -17,6 +17,9 @@ const environmentSchema = z.object({
     .min(1)
     .default('http://localhost:5173,http://127.0.0.1:5173'),
   DATABASE_URL: z.string().url().optional(),
+  VERCEL_URL: z.string().optional(),
+  VERCEL_BRANCH_URL: z.string().optional(),
+  VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),

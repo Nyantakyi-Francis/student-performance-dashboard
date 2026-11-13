@@ -63,9 +63,10 @@ function PerformancePieChart({ students, subjects }) {
         {passCount + failCount === 0 ? (
           <h2>No data available for this filter</h2>
         ) : (
-          <Pie data={data} options={options} />
+          <Pie data={data} options={options} role="img" aria-label={`Pass and fail chart: ${passCount} passing and ${failCount} below 50 percent`} />
         )}
       </div>
+      <p className="chart-description">{passCount} passing; {failCount} below 50%. Counts are student-term records with scores, so one student can appear in multiple terms. Records without scores are excluded.</p>
     </div>
   )
 }

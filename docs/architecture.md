@@ -1,5 +1,7 @@
 # Target architecture
 
+Current implementation: the API workspace now supports staff writes, policy versions, CSV import preview/commit, immutable publication snapshots, linked learner reports and account provisioning. New workflow screens are TypeScript; legacy frontend screens remain JavaScript at the repository root. The remaining sections describe the target architecture, including future packages and workers. See [implementation plan](implementation-plan.md) for verified status.
+
 ## Architectural style
 
 The application will use a modular monolith. The frontend, API, and database have explicit boundaries, but the backend remains one deployable service until measured scale or team ownership requires separation.
@@ -256,4 +258,3 @@ The initial end-to-end read slice is deliberately unauthenticated only in the lo
 5. Test the route against a real test database.
 
 No public deployment should expose this temporary path before session-based authorization is implemented.
-

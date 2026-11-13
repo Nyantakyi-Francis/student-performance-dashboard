@@ -455,26 +455,26 @@ function DataManager({
               required
             />
 
-            <select name="gender" value={formData.gender} onChange={handleBasicChange}>
+            <label>Student gender<select name="gender" value={formData.gender} onChange={handleBasicChange}>
               <option value="Female">Female</option>
               <option value="Male">Male</option>
-            </select>
+            </select></label>
 
-            <select name="grade" value={formData.grade} onChange={handleBasicChange}>
+            <label>Student grade<select name="grade" value={formData.grade} onChange={handleBasicChange}>
               {grades.map((grade) => (
                 <option key={grade} value={grade}>
                   {grade}
                 </option>
               ))}
-            </select>
+            </select></label>
 
-            <select name="term" value={formData.term} onChange={handleBasicChange}>
+            <label>Student term<select name="term" value={formData.term} onChange={handleBasicChange}>
               {terms.map((term) => (
                 <option key={term} value={term}>
                   {term}
                 </option>
               ))}
-            </select>
+            </select></label>
 
             {subjects.map((subject) => (
               <input

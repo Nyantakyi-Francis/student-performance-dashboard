@@ -11,8 +11,9 @@ export function createDatabase(config: Pick<AppConfig, 'DATABASE_URL'>) {
   }
 
   const client = postgres(config.DATABASE_URL, {
-    max: 10,
-    idle_timeout: 20,
+    // Supabase's transaction pooler shares server connections across functions.
+    max: 3,
+    idle_timeout: 5,
     connect_timeout: 10,
     prepare: false,
   })
