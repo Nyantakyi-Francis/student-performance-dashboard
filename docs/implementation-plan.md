@@ -22,7 +22,7 @@ Synthetic data only. No hosted migration, release, real student data, automatic 
 
 ## Results on 13 November 2026
 
-Milestones 2–7 are implemented and verified locally. Milestone 1 has a prepared same-origin deployment configuration and verified external findings; hosted authentication remains unverified because the live session path returned 404 and the documented Render health check timed out. See [release requirements](deployment.md). No hosted migration or deployment was performed.
+Milestones 2?7 are implemented and verified locally. The frontend/API preview is deployed, and the hosted database migrations are applied and verified. Synthetic account setup and the authenticated hosted workflow still need verification. See [release requirements](deployment.md).
 
 | Check | Result |
 | --- | --- |
@@ -49,4 +49,4 @@ Remaining limits: manual screen-reader testing, non-Chromium browsers, large-sch
 
 ## Vercel follow-up
 
-The user authorized the Vercel migration and coordinated synthetic release. The standard function adapter, pooled PostgreSQL client and shared production rate limiter are implemented. Local desktop/mobile browser verification passed again. Hosted previews have been created; Supabase availability prevents backup, migration and hosted workflow checks. Production has not been promoted. See deployment.md for current evidence and release steps.
+The user authorized the Vercel migration and coordinated synthetic release. The standard function adapter, pooled PostgreSQL client and shared production rate limiter are implemented. Local desktop/mobile browser verification passed again. Hosted previews have been created; Supabase connectivity recovered. The application backup restored successfully, migrations passed on the restored copy, and all three pending migrations were applied to the hosted database. Original academic records are unchanged and all 22 hosted tables retain RLS without browser-role table access. Hosted account setup and workflow checks remain pending. Production has not been promoted. See deployment.md for current evidence and release steps.

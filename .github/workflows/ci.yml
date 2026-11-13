@@ -44,7 +44,9 @@ jobs:
       - run: npm run db:seed:accounts
       - run: npm run api:smoke
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      # Restart the test API between viewports so their sign-ins have independent IP budgets.
+      - run: npm run test:e2e -- --project=desktop
+      - run: npm run test:e2e -- --project=mobile
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
