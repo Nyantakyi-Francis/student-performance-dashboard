@@ -15,6 +15,7 @@ import AssessmentWorkspace from './AssessmentWorkspace'
 import PublishedReports from './PublishedReports'
 import AccountManager from './AccountManager'
 import AccountRecovery from './AccountRecovery'
+import { publicDemoAccounts, publicDemoSchool } from '../data/demoAccounts'
 
 const initialFilters = { searchTerm: '', selectedGender: 'All', selectedGrade: 'All', selectedRisk: 'All', selectedSubject: 'All', selectedTerm: 'All' }
 
@@ -50,7 +51,7 @@ export default function DatabaseView() {
         if (controller.signal.aborted) return
         setData(dashboard)
         setStatus(dashboard.students.length ? 'success' : 'empty')
-        setMessage(dashboard.students.length ? 'Database records loaded. The analytics table is read-only; use the assessment workspace to save scores.' : 'No records are available for your school or teaching assignments.')
+        setMessage(dashboard.students.length ? 'School records loaded.' : 'No student records are available yet.')
       } catch (error) {
         if (controller.signal.aborted) return
         setData(null)
@@ -60,7 +61,7 @@ export default function DatabaseView() {
           setMessage('Sign in to view records from your school.')
         } else {
           setStatus('error')
-          setMessage(error.message || 'Database records could not be loaded.')
+          setMessage(error.message || 'School records could not be loaded. Please try again.')
         }
       }
     }
@@ -72,21 +73,24 @@ export default function DatabaseView() {
     setData(null)
     setViewingStudent(null)
     setStatus('loading')
-    setMessage('Loading database records...')
+    setMessage('Loading school records...')
     setFilters(initialFilters)
     setReload((value) => value + 1)
   }
-  const signIn = async (event) => {
-    event.preventDefault()
+  const signInWith = async (account) => {
     setSigningIn(true)
     try {
-      await apiRequest('/api/v1/auth/login', { method: 'POST', body: credentials })
+      await apiRequest('/api/v1/auth/login', { method: 'POST', body: account })
       setCredentials((previous) => ({ ...previous, password: '' }))
       retry()
     } catch (error) {
       setStatus('error')
       setMessage(error.message || 'Sign-in failed.')
     } finally { setSigningIn(false) }
+  }
+  const signIn = (event) => {
+    event.preventDefault()
+    void signInWith(credentials)
   }
   const signOut = async () => {
     if (!window.dispatchEvent(new Event('before-school-navigation', { cancelable: true }))) return
@@ -125,11 +129,15 @@ export default function DatabaseView() {
   }, [session, clearExpiredSession])
 
   return (
-    <section aria-label="Database view">
+    <section aria-label="School workspace">
       <div className={`remote-status remote-status--${status}`} role={status === 'error' ? 'alert' : 'status'}>
         {message}
       </div>
-      <p>Database records are not saved in browser storage. Sandbox edits stay separate. Staff analytics include drafts and use the sandbox's fixed risk bands; published reports use their saved grading policy.</p>
+      {!session && import.meta.env.VITE_PUBLIC_DEMO === 'true' && <section className="card demo-accounts" aria-label="Try the school workspace">
+        <h2>Try the school workspace</h2>
+        <p>Choose a role to explore the sample school.</p>
+        <div className="workflow-actions">{publicDemoAccounts.map((account) => <button key={account.role} className="action-button secondary" disabled={signingIn || status === 'loading'} onClick={() => void signInWith({ email: account.email, password: account.password, schoolSlug: publicDemoSchool })}>Try as {account.label.toLowerCase()}</button>)}</div>
+      </section>}
       {session ? (
         <div className="database-session">
           <p>Signed in as {session.displayName} ({session.role}) at {session.schoolName}.</p>
@@ -145,7 +153,7 @@ export default function DatabaseView() {
         </form>
       ) : null}
       {!session && hasConfiguredApiBaseUrl && <AccountRecovery />}
-      {status !== 'loading' && hasConfiguredApiBaseUrl && <button className="action-button secondary" onClick={retry}>Reload database records</button>}
+      {status !== 'loading' && hasConfiguredApiBaseUrl && <button className="action-button secondary" onClick={retry}>Refresh school records</button>}
       {session?.role === 'administrator' && status !== 'loading' && <AccessManager onUnauthorized={clearExpiredSession} />}
       {session?.role === 'teacher' && <p>Your view includes only assigned classes and subjects. Ask your administrator to change your assignments.</p>}
       {session && <PublishedReports revision={reload} />}
@@ -153,6 +161,7 @@ export default function DatabaseView() {
       {session?.role === 'administrator' && <AccountManager />}
       {session && data && (
         <>
+          <div className="section-heading"><h2>Class overview</h2><p>Includes saved draft scores. Check published reports for released results.</p></div>
           <FilterBar {...filters}
             setSearchTerm={updateFilter('searchTerm')} setSelectedGender={updateFilter('selectedGender')}
             setSelectedGrade={updateFilter('selectedGrade')} setSelectedRisk={updateFilter('selectedRisk')}

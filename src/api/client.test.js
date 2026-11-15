@@ -21,7 +21,19 @@ test('API errors preserve stable codes and reject unreadable success bodies', as
   const denied = createApiClient('', async () => ({ ok: false, json: async () => ({ error: { code: 'UNAUTHENTICATED', message: 'Sign in.' } }) }))
   await assert.rejects(denied('/api/v1/dashboard-data'), (error) => error instanceof ApiError && error.code === 'UNAUTHENTICATED')
   const invalid = createApiClient('', async () => ({ ok: true, json: async () => { throw new Error('HTML') } }))
-  await assert.rejects(invalid('/api/v1/dashboard-data'), (error) => error.code === 'INVALID_RESPONSE')
+  await assert.rejects(invalid('/api/v1/dashboard-data'), (error) => error.code === 'INVALID_RESPONSE' && error.message === 'School records are temporarily unavailable. Please try again shortly.')
+})
+
+test('connection failures and server errors give useful messages without exposing diagnostics', async () => {
+  const offline = createApiClient('', async () => { throw new TypeError('Failed to fetch') })
+  await assert.rejects(offline('/api/v1/auth/session'), (error) => error.code === 'NETWORK_ERROR' && error.message.includes('Check your internet connection'))
+  const failed = createApiClient('', async () => ({ ok: false, status: 500, json: async () => ({ error: { code: 'INTERNAL_ERROR', message: 'internal diagnostic' } }) }))
+  await assert.rejects(failed('/api/v1/auth/session'), (error) => error.code === 'INTERNAL_ERROR' && !error.message.includes('diagnostic'))
+  const controller = new AbortController()
+  const cancelled = new DOMException('Cancelled', 'AbortError')
+  controller.abort()
+  const request = createApiClient('', async () => { throw cancelled })
+  await assert.rejects(request('/api/v1/auth/session', { signal: controller.signal }), (error) => error === cancelled)
 })
 
 test('dashboard validation preserves empty and missing data and rejects malformed records', () => {

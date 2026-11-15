@@ -20,7 +20,9 @@ export type Detail = z.infer<typeof detailSchema>
 export type Report = z.infer<typeof reportsSchema>[number]
 export async function readData<T>(path: string, schema: z.ZodType<T>, signal?: AbortSignal): Promise<T> {
   const response = await apiRequest(path, { signal })
-  return schema.parse(response.data)
+  const result = schema.safeParse(response.data)
+  if (!result.success) throw new Error('School records could not be loaded. Please try again.')
+  return result.data
 }
 export async function writeData(path: string, body: unknown = {}) {
   return apiRequest(path, { method: 'POST', body })

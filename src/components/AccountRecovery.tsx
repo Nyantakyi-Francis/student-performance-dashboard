@@ -28,14 +28,14 @@ export default function AccountRecovery() {
   }
   return <section className="card workflow-section" aria-label="Account help">
     <h2>Account help</h2>
-    <details open={openedWithToken}><summary>Accept an invitation or set a recovered password</summary>
+    <details open={openedWithToken}><summary>Set up or reset your password</summary>
       <form onSubmit={(event) => submit(event, true)} className="workflow-form">
-        <label>Single-use account token<input type="password" value={token} onChange={(e) => setToken(e.target.value)} required autoComplete="off" /></label>
+        <label>Invitation or recovery code<input type="password" value={token} onChange={(e) => setToken(e.target.value)} required autoComplete="off" /></label>
         <label>New password (12–128 characters)<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={12} maxLength={128} required autoComplete="new-password" /></label>
         <button className="action-button" disabled={busy}>Save account password</button>
       </form>
     </details>
-    <details><summary>Request password recovery</summary><p>Your school administrator verifies your identity and provides a recovery link. No automated email is sent.</p><form className="workflow-form" onSubmit={(event) => submit(event, false)}>
+    <details><summary>Forgot your password?</summary><p>Ask your school administrator for a recovery link after submitting your request.</p><form className="workflow-form" onSubmit={(event) => submit(event, false)}>
       <label>Recovery school code<input value={schoolSlug} onChange={(e) => setSchoolSlug(e.target.value)} required /></label>
       <label>Recovery email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label>
       <button className="action-button" disabled={busy}>Request recovery</button>

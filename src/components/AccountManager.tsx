@@ -22,7 +22,7 @@ export default function AccountManager() {
     try {
       const result = await writeData(path, body)
       if (result.data.token) setLink(`${window.location.origin}/#account-token=${result.data.token}`)
-      setMessage(result.data.message ?? 'School membership deactivated. Its sessions are revoked.')
+      setMessage(result.data.message ?? 'Account deactivated. This person can no longer access the school workspace.')
       setPassword(''); setRevision((v) => v + 1)
       return true
     } catch (e) { setError(errorMessage(e)); return false } finally { setBusy(false) }

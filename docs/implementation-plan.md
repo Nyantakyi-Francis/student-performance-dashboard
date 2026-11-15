@@ -50,3 +50,7 @@ Remaining limits: manual screen-reader testing, non-Chromium browsers, large-sch
 ## Vercel follow-up
 
 The user authorized the Vercel migration and coordinated synthetic release. The standard function adapter, pooled PostgreSQL client and shared production rate limiter are implemented. Local desktop/mobile browser verification passed again. Hosted previews have been created; Supabase connectivity recovered. The application backup restored successfully, migrations passed on the restored copy, and all three pending migrations were applied to the hosted database. Original academic records are unchanged and all 22 hosted tables retain RLS without browser-role table access. Hosted account setup and workflow checks remain pending. Production has not been promoted. See deployment.md for current evidence and release steps.
+
+## Portfolio release follow-up: 15 November 2026
+
+User-facing implementation notes were removed or replaced with task-specific wording. Public teacher/student/guardian accounts use ordinary sign-in and permission checks. The production database configuration and Vercel wildcard query forwarding were corrected. A startup failure now returns safe JSON. The README, current screenshots, case study and walkthrough recording are included. See [deployment evidence](deployment.md) for actual checks and the final deployment. Earlier status entries above describe the 13 November run.

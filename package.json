@@ -9,6 +9,7 @@
     "api:smoke": "npm run db:smoke --workspace @student-dashboard/api",
     "api:test": "npm run test --workspace @student-dashboard/api",
     "api:typecheck": "npm run typecheck --workspace @student-dashboard/api",
+    "demo:seed": "node --import tsx scripts/seed-portfolio-demo.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

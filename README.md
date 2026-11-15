@@ -1,140 +1,100 @@
 # Student Performance Analytics Dashboard
 
-A portfolio-ready analytics dashboard for tracking student results, surfacing academic risk, and comparing performance across school terms.
+A school assessment application with a React dashboard, a Fastify API, and PostgreSQL. Teachers enter scores and publish results; students and guardians see reports for their linked student records.
 
-## Live Demo
+[Open the application](https://student-performance-dashboard-three.vercel.app/) | [Case study](docs/case-study.md) | [Walkthrough](docs/walkthrough.md)
 
-[View Live Project](https://student-performance-dashboard-three.vercel.app/)
+## Try it
 
-## Why This Project Stands Out
+Use **Explore sample data** to filter results, compare terms, import spreadsheets, and edit a dataset saved on your device. No account is needed.
 
-This project goes beyond a static chart demo. It supports a realistic school workflow:
+Open **School workspace** and choose **Try as teacher**, **Try as student**, or **Try as guardian**. These shortcuts use ordinary password sign-in with the public accounts below. There is no authentication bypass.
 
-- upload CSV and Excel datasets
-- manage subjects, grades, and terms dynamically
-- review student records in a searchable performance table
-- explore class insights and term-over-term trends
-- export cleaned data back to CSV or Excel
-- persist changes in the browser with `localStorage`
+| Role | Email | Password | Access |
+| --- | --- | --- | --- |
+| Teacher | teacher@portfolio.example | TryTeacher2026! | Grade 7 English assessments, draft scores, imports, publication |
+| Student | student@portfolio.example | TryStudent2026! | Ama Mensah's published results |
+| Guardian | guardian@portfolio.example | TryGuardian2026! | Ama Mensah's published results |
 
-## Portfolio Highlights
+School code: `accra-demo-jhs`. These credentials are intentionally public. This is a shared, fictional school: another visitor's edits may appear. Keep all uploaded records fictional. Administrator credentials are private; administrator features are covered in the workflow guide and tests.
 
-- Built with React and Vite using reusable dashboard components
-- Includes import, validation, filtering, analytics, export, and modal detail flows
-- Tracks multiple academic terms so recruiters can see trend analysis, not just one-off charts
-- Ships with sample data and a downloadable CSV template for quick evaluation
-- Includes a lightweight test script for analytics utilities
+A useful review path:
+
+1. Open the sample dashboard and filter by term or subject.
+2. Try the teacher account and create an English assessment for Grade 7. Choose a date within its term.
+3. Enter scores, save, and refresh. A recorded zero and missing work remain different.
+4. Preview a CSV import. Invalid rows prevent saving; a valid import updates only the listed students.
+5. Add a publication reason and publish. Sign out, try the student account, and open the published result.
 
 ## Screenshots
 
-![Dashboard Screenshot](./screenshots/dashboard-1.png)
-![Dashboard Screenshot](./screenshots/dashboard-2.png)
-![Dashboard Screenshot](./screenshots/dashboard-3.png)
+![Sample dashboard and class performance](screenshots/dashboard-1.png)
+![Teacher assessment and score entry](screenshots/dashboard-2.png)
+![Published student report](screenshots/dashboard-3.png)
 
-## Core Features
+[Watch the 58-second walkthrough](docs/assets/school-workflow.mp4).
 
-- Search by student name
-- Filter by grade, gender, risk level, subject, and term
-- Subject average bar chart
-- Pass/fail distribution chart
-- Term performance trend chart
-- Insight cards for best subject, weakest subject, best grade, weakest grade, and student improvement
-- Manual student entry and editing
-- CSV and Excel upload support
-- CSV template download
-- CSV and Excel export
-- Accessible student details modal with keyboard close support
+## What is implemented
 
-## Tech Stack
+- Search, grade/gender/risk/subject/term filters, charts, accessible chart tables, and student details.
+- CSV and Excel import/export in the sample dashboard; stable student IDs across terms.
+- Password sign-in, expiring cookie sessions, school isolation, and class/subject assignments for teachers.
+- Assessment creation, draft score entry, explicit missing/excused/incomplete states, and stale-save rejection.
+- Mapped CSV preview and atomic commit in the school workspace, with row errors, expiry, and safe retries.
+- Versioned grading rules and immutable publications. Editing a draft leaves released reports unchanged until republished.
+- Student and guardian reports limited to explicitly linked students; browser printing.
+- Administrator assignment management, invitations, password recovery, account deactivation, and audit history. Account links are delivered manually.
 
-- React 19
-- Vite
-- Chart.js
-- react-chartjs-2
-- Papa Parse
-- XLSX
-- Fastify API workspace
-- PostgreSQL schema and migrations with Drizzle
-- ESLint
+The sample dashboard stores its dataset in localStorage. School records live in PostgreSQL and are not copied into that dataset. Staff overview charts include drafts and use fixed advisory bands; official reports use the grading rules retained with their publication.
 
-## Project Structure
+## Stack and structure
+
+React 19, Vite, Chart.js, Papa Parse, XLSX, Fastify, TypeScript, Zod, PostgreSQL, and Drizzle. Vercel serves the frontend and same-origin API; Supabase hosts PostgreSQL. New school workflow screens are TypeScript; older dashboard components remain JavaScript.
 
 ```text
-src/
-  components/      UI sections for filters, charts, tables, modal, and data management
-  data/            Sample dataset and display configuration
-  utils/           Analytics, filtering, import/export helpers, and tests
+src/                  React UI, API adapters, sample data, analytics and import/export
+apps/api/src/         Sessions, assignments, assessments, reports and database schema
+api/index.ts          Vercel function adapter
+apps/api/drizzle/     SQL migrations for fresh local databases
+supabase/migrations/  Mirrored SQL migrations for the existing hosted installation
+tests/e2e/            Desktop/mobile browser workflows and accessibility checks
+docs/                 Setup, API, design decisions, case study and release evidence
 ```
 
-## Local Development
+## Run locally
 
-```bash
-npm install
+Use Node.js 24 and npm:
+
+```sh
+npm ci
 npm run dev
 ```
 
-## Quality Checks
+The sample dashboard works without a database. For the school workspace, follow [database and account setup](docs/local-development.md). Start the API with `npm run api:dev` in another terminal. PostgreSQL 17 or later is supported.
 
-```bash
+After setting `DATABASE_URL` explicitly to a fictional demo database, `npm run demo:seed` adds the public accounts without resetting academic records or changing existing passwords. Set `VITE_PUBLIC_DEMO=true` before starting/building the frontend to show the sign-in shortcuts. Leave it disabled outside the portfolio demonstration.
+
+Existing Supabase installations must use the Supabase migration history. Do not run an initial Drizzle migration or a database reset against the hosted school.
+
+## Verification
+
+```sh
 npm run lint
-npm run test
 npm run typecheck
+npm test
 npm run build
+npm run api:build
+npm run test:integration
+npm run test:e2e -- --project=desktop
+npm run test:e2e -- --project=mobile
 ```
 
-## Database and access status
+The unit/API suite contains 31 tests. PostgreSQL integration tests cover school isolation, session and assignment checks, competing saves, imports, publications, invitations, recovery, and shared rate-limit counters. Browser tests cover the teacher-to-learner workflow, administrator invitations and assignment changes, sample-data separation, errors/retries, and accessibility at desktop/mobile sizes. Run browser viewports separately with a fresh test API so sign-in budgets remain independent. See [local setup](docs/local-development.md) for the isolated test database and credentials; never run these suites on the hosted database.
 
-The dashboard has two separate modes:
+GitHub Actions runs lint, type checks, unit/API tests, builds, PostgreSQL integration tests, and desktop/mobile Chromium workflows. The exact local and hosted verification results are recorded in [deployment notes](docs/deployment.md).
 
-- **Browser sandbox:** editable synthetic data persisted in this browser.
-- **Database view:** authenticated, read-only API records kept out of browser storage. API failures show an error and retry action.
+## Limits
 
-Administrators can read their school's records and manage teacher class/subject assignments. Teachers can read only assigned class rosters and subject results. The API uses opaque cookie sessions, scoped queries, CSRF request checks, rate limits, and audit events for assignment/session changes. All demo data must remain synthetic.
+This project demonstrates a school workflow with fictional records. It has not been evaluated in a live school. Automated account email, PDF generation beyond browser printing, broader school setup, large-school performance measurements, manual screen-reader testing, and non-Chromium browser coverage remain unfinished. Existing dependency advisories, including the XLSX npm package, require remediation before any real-student deployment.
 
-See [local setup and checks](docs/local-development.md), [API reference](docs/api.md), and [threat model](docs/threat-model.md). GitHub Actions runs unit, PostgreSQL integration, build, and desktop/mobile browser checks.
-
-## Sample Data Format
-
-Your CSV or Excel file should include:
-
-- `studentId` (reuse the same ID across terms; generated separately for each row when omitted)
-- `name`
-- `gender`
-- `grade`
-- `term`
-- one column for each subject, such as `English`, `Mathematics`, `Science`, and `Social Studies`
-
-## Scores and student identity
-
-Scores must be finite numbers from 0 to 100, or blank. Blank cells are stored as missing and exported as blank cells. Zero is a recorded score. Invalid CSV or Excel uploads are rejected in full with row-level errors; the current dataset stays unchanged. A student ID can have only one record per term.
-
-Student averages use recorded scores only. Subject averages show the mean of recorded scores for that subject; the class average weights each subject with scores equally. Term and grade averages weight each record with scores equally. Records with no scores show "No scores" and are excluded from pass/fail, risk, and improvement calculations. Adding a subject starts its scores as missing.
-
-Use the same `studentId` for a student's records across terms. Names and grades do not determine identity. The manual entry form accepts an existing student ID or generates a new one; exports preserve that ID. Legacy browser records without a student ID use their existing record ID, so they are not automatically linked across terms. Reimport them with explicit student IDs to link them. Previously saved zeroes cannot be distinguished from blanks that older versions converted to zero.
-
-## Product Thinking Behind It
-
-This dashboard is designed as if it were being handed to a school administrator:
-
-- sample data loads instantly for demo purposes
-- user changes persist across refreshes
-- uploads can replace the current dataset or append to it
-- exports make it easy to move processed data back into spreadsheets
-- trend analysis helps identify improvement or decline over time
-
-## School workflow
-
-Staff can create assessments, save draft scores, preview and commit mapped CSV imports, and publish immutable result snapshots. Score saves reject stale versions. Published reports retain their source version and grading-policy version; later draft edits require an amendment reason and do not change the report until republished.
-
-Administrators create grading-policy versions, issue single-use invitation and recovery links, deactivate school memberships, and review audit events. Invitations and recovery require the administrator's current password. Links are handed over manually after verifying the recipient; the app sends no email. Students and guardians see published results only for explicitly linked students.
-
-The sandbox remains separate. Staff analytics use its fixed advisory thresholds; official report totals use the policy saved in each publication. New workflow screens and API adapters have TypeScript checks; legacy frontend modules remain JavaScript.
-
-See [implementation plan](docs/implementation-plan.md), [workflow guide](docs/school-workflow.md), and [deployment checklist](docs/deployment.md).
-
-## Later work
-
-- PDF generation beyond browser printing
-- automated account-message delivery through a configured provider
-- broader school-setup administration and assessment categories
-- migration of the remaining JavaScript frontend modules
+[API reference](docs/api.md) | [Workflow guide](docs/school-workflow.md) | [Architecture decisions](docs/adr/) | [Threat model](docs/threat-model.md)

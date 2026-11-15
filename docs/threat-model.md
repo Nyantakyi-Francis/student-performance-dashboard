@@ -13,7 +13,7 @@ Password hashes and session hashes stay in PostgreSQL. The browser receives a ra
 - Cross-school record disclosure: derive the school from the session; reject conflicting school IDs/slugs; scope every join; integration tests use two schools and foreign object IDs.
 - Teacher access outside assignments: check assigned classes for roster reads and class/subject pairs for assessment reads. Administrators alone may create/remove assignments. Assignment targets must belong to the administrator's school and be active.
 - Raw credential disclosure: passwords use salted, asynchronous scrypt (N=32768, r=8, p=3); session tokens use 32 random bytes and only their SHA-256 hashes are stored. Responses omit credential fields and logs redact cookies and authorization headers.
-- Account guessing: generic login failures, equivalent password derivation for unknown users, and separate per-IP login/recovery limits. Authenticated request budgets use verified membership IDs so different school users behind one proxy do not consume each other's budget; anonymous traffic uses normalized IPs. Limiting is process-local, so multiple API instances need a common store.
+- Account guessing: generic login failures, equivalent password derivation for unknown users, and separate per-IP login/recovery limits. Authenticated request budgets use verified membership IDs so different school users behind one proxy do not consume each other's budget; anonymous traffic uses normalized IPs. Production instances share atomic PostgreSQL counters; development and tests use process-local budgets.
 - Session reuse: login rotates the current browser session; expiry, logout, inactive users, inactive memberships, and inactive schools reject subsequent reads. Assignment revocation is checked on every subsequent query. An already-rendered view is not remotely erased until the next request or sign-out.
 - CSRF and credentialed CORS: allow exact configured origins only; mutations require a custom verification header and login/POST requires JSON. Production uses Secure, HttpOnly, SameSite=Lax cookies. Keep frontend and API same-origin or same-site.
 - Direct Supabase Data API access: RLS is enabled without browser policies and table privileges are revoked from public, anon, and authenticated roles. The API owns authorization; a leaked privileged database credential bypasses this boundary.
@@ -22,7 +22,7 @@ Password hashes and session hashes stay in PostgreSQL. The browser receives a ra
 
 ## Residual risks and limits
 
-MFA, distributed rate limiting, automated account-message delivery and external audit review are not implemented. This demonstration is not ready for real student records. Browser XSS can still issue authorized requests despite HttpOnly cookies. RLS denies direct browser access; it does not replace API checks for a privileged connection. Reports and workspace lists are currently bounded by the synthetic dataset rather than server pagination and require measured scaling work for large schools.
+MFA, automated account-message delivery and external audit review are not implemented. This demonstration is not ready for real student records. Browser XSS can still issue authorized requests despite HttpOnly cookies. RLS denies direct browser access; it does not replace API checks for a privileged connection. Reports and workspace lists are currently bounded by the synthetic dataset rather than server pagination and require measured scaling work for large schools.
 
 ## Write, report and account controls
 

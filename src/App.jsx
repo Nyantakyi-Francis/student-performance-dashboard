@@ -95,7 +95,7 @@ function App() {
   }
 
   useEffect(() => {
-    const failed = () => setStorageWarning('Browser storage is unavailable or full. Keep this tab open and export your sandbox data before leaving.')
+    const failed = () => setStorageWarning('Your changes could not be saved on this device. Download a copy before closing this page.')
     window.addEventListener('sandbox-storage-failed', failed)
     return () => window.removeEventListener('sandbox-storage-failed', failed)
   }, [])
@@ -186,19 +186,17 @@ function App() {
       <header className="header">
         <h1>Student Performance Analytics Dashboard</h1>
         <p>
-          Explore student performance in a browser sandbox or sign in to read school records.
+          Track class progress, manage assessments, and share student reports.
         </p>
       </header>
 
       <main className="main-content">
-        <nav className="data-mode-switch" aria-label="Data source">
-          <button className="action-button secondary" aria-pressed={mode === 'sandbox'} onClick={() => changeMode('sandbox')}>Browser sandbox</button>
-          <button className="action-button secondary" aria-pressed={mode === 'database'} onClick={() => changeMode('database')}>Database view</button>
+        <nav className="data-mode-switch" aria-label="Workspace">
+          <button className="action-button secondary" aria-pressed={mode === 'sandbox'} onClick={() => changeMode('sandbox')}>Explore sample data</button>
+          <button className="action-button secondary" aria-pressed={mode === 'database'} onClick={() => changeMode('database')}>School workspace</button>
         </nav>
-        <div className="demo-notice" role="note"><strong>Synthetic demo only.</strong> Use fictional student records in both modes.</div>
         {mode === 'database' && <Suspense fallback={<p role="status">Loading school workspace…</p>}><DatabaseView /></Suspense>}
         <div hidden={mode !== 'sandbox'}>
-        <p role="status">Browser sandbox: edits save in this browser. Database records are kept separate.</p>
         {storageWarning && <p role="alert">{storageWarning}</p>}
         <DataManager
           students={students}

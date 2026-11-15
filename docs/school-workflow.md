@@ -4,7 +4,7 @@ Use synthetic records only. The browser sandbox and database workspace have sepa
 
 ## Staff
 
-1. Sign in under Database view with a seeded administrator or teacher account.
+1. Sign in under School workspace with a seeded administrator or teacher account.
 2. Open Assessment workspace → Create an assessment. Choose a permitted class, subject and term. The assessment date must lie within the term. Locked or archived terms reject writes.
 3. Set maximum points and an assessment weight. A weight of zero excludes the assessment from totals.
 4. Enter points with an explicit state. `scored` requires points, including zero. `missing`, `excused` and `incomplete` require blank points. Feedback is visible in published reports.
@@ -31,7 +31,7 @@ A publication stores a snapshot with its source version, policy, score states an
 
 Students have one linked student; guardians have one or more. Staff do not use learner links. Administrators supply links when inviting an account. Cross-school links are rejected. Existing emails cannot be overwritten by invitations.
 
-Invitation links expire after 24 hours, recovery links after 30 minutes. Tokens are random, hashed in the database and single use. The recipient opens the link, switches to Database view, and sets a password in Account help. The fragment is removed from the address bar and tokens are not stored in browser storage. Passwords need 12–128 characters.
+Invitation links expire after 24 hours, recovery links after 30 minutes. Tokens are random, hashed in the database and single use. The recipient opens the link, switches to School workspace, and sets a password in Account help. The fragment is removed from the address bar and tokens are not stored in browser storage. Passwords need 12–128 characters.
 
 Recovery requests return the same response for known and unknown emails. Eligible requests appear in the administrator account table. After verifying the recipient's identity through a trusted channel, an administrator reauthenticates and issues a link. Recovery changes the user's password and revokes all their sessions across schools. It never activates a deactivated membership. New links invalidate older links of the same kind. No email provider is configured and no account messages are sent automatically.
 
@@ -42,3 +42,7 @@ Deactivating a school membership revokes its sessions. Administrators cannot dea
 Run the academic seed and account seed in a synthetic database. Accounts are `admin@demo.example`, `teacher@demo.example`, `student@demo.example`, and `guardian@demo.example`, school code `accra-demo-jhs`. Passwords come from `DEMO_ADMIN_PASSWORD`, `DEMO_TEACHER_PASSWORD`, `DEMO_STUDENT_PASSWORD` and `DEMO_GUARDIAN_PASSWORD`. For compatibility, omitted learner passwords use the synthetic teacher password. Set separate values for shared demonstrations.
 
 The teacher initially has Grade 7 / English access. Both learner accounts link to Ama Mensah (`ADJHS-2025-001`). Reports begin empty until staff publish assessments. Rerunning the account seed preserves passwords, memberships and access decisions. The academic seed replaces synthetic fixtures; do not rerun it over edited demo results you need to preserve.
+
+## Public review access
+
+The hosted portfolio has separate public reviewer accounts at teacher@portfolio.example, student@portfolio.example and guardian@portfolio.example. Use the role buttons in School workspace or the intentionally public credentials in the README. These are ordinary school-scoped memberships, not an authentication bypass. The teacher is assigned Grade 7 English; the learner and guardian are linked to Ama Mensah. Administrator credentials remain private. `npm run demo:seed` provisions these accounts without resetting school data or passwords.

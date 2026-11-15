@@ -29,7 +29,7 @@ npm run api:dev
 npm run dev
 ```
 
-Open the Vite URL. The default Browser sandbox works without PostgreSQL or an account. Database view requires sign-in. Local Vite proxies `/api` to `http://127.0.0.1:3001`, so cookies use the frontend origin. The API origin allowlist includes the two standard Vite localhost origins; update it when changing the frontend port.
+Open the Vite URL. The default Explore sample data works without PostgreSQL or an account. School workspace requires sign-in. Local Vite proxies `/api` to `http://127.0.0.1:3001`, so cookies use the frontend origin. The API origin allowlist includes the two standard Vite localhost origins; update it when changing the frontend port.
 
 Sandbox edits and its unfinished entry form stay mounted when switching modes. Committed sandbox records survive refresh in the existing `student-performance-dashboard:v2` storage key. Unsaved form fields survive mode switching but are not persisted across a full refresh. Database responses, passwords, and session tokens are never written to localStorage. A database request failure shows an error and retry action without falling back to sandbox records.
 
@@ -66,12 +66,18 @@ npm run test:e2e
 
 Playwright starts a dedicated API on port 3101 and Vite on port 4178. Both ports must be free. Desktop Chromium and mobile Chromium flows cover sandbox preservation, login/logout, read-only records, assignment changes, loading/error/empty/retry states, and refresh. API integration tests cover cross-school access, session expiry/revocation, rate limits, CSRF checks, and invalid assignments. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` can select an already-installed Chromium binary.
 
-GitHub Actions runs these checks with PostgreSQL 17, creates synthetic accounts, and uploads browser failure artifacts. The workflow is defined locally; its first hosted run occurs after pushing to GitHub.
+GitHub Actions runs these checks with PostgreSQL 17, creates synthetic accounts, and uploads browser failure artifacts. See deployment.md for the checks actually run for the current release.
 
 ## Deployment
 
 Use HTTPS and configure `CLIENT_ORIGIN` to exact trusted frontend origins. Production cookies are Secure, HttpOnly, SameSite=Lax, scoped to `/api`, and expire after eight hours. Prefer a same-origin `/api` reverse proxy and build the frontend with `VITE_API_BASE_URL=/`. A same-site API subdomain also works with an explicit HTTPS `VITE_API_BASE_URL` and credentialed CORS.
 
-Unrelated Vercel and Render domains are cross-site: the Lax cookie will not authenticate cross-site fetches. Configure the proxy or same-site domains before enabling database view there. Do not weaken cookie policy to work around deployment layout. The Vercel migration now uses a same-origin function adapter; preview deployments and sensitive preview variables have been configured. Hosted migrations have been applied and verified. Account setup, hosted workflow checks and production promotion remain pending. See deployment.md.
+Unrelated Vercel and Render domains are cross-site: the Lax cookie will not authenticate cross-site fetches. Configure the proxy or same-site domains before enabling database view there. Do not weaken cookie policy to work around deployment layout. The Vercel migration now uses a same-origin function adapter; preview deployments and sensitive preview variables have been configured. Hosted migrations have been applied and verified. The public portfolio accounts and hosted workflow are now provisioned and verified. See deployment.md for release evidence.
 
 Production API instances share PostgreSQL rate-limit counters; local development and tests use per-process counters. Invitations and recovery use administrator-issued links with manual delivery. Configure recipient verification, monitoring, audit review and backup/recovery procedures before considering real student data. The public demo remains synthetic-only. See the [deployment checklist](deployment.md) for proxy configuration and external blockers.
+
+## Public portfolio accounts
+
+After explicitly selecting a fictional demo database with DATABASE_URL, run `npm run demo:seed`. It adds the teacher, student, and guardian accounts described in the README. It preserves academic records and existing credentials; it stops if a public demo address already has a different password or role. `VITE_PUBLIC_DEMO=true` enables the ordinary sign-in shortcuts. Do not enable those shortcuts for a school with real records.
+
+Supply `PORTFOLIO_ADMIN_PASSWORD` when provisioning a private `admin@portfolio.example` administrator for a portfolio instance. Keep that value outside public configuration and source control. Public demo buttons never use administrator credentials.
